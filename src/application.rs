@@ -1,5 +1,7 @@
 use crate::renderer::Renderer;
 use crate::time::{FrameLimit, FrameLimitStrategy, Time};
+use crate::ui::screens::login_screen::LoginScreen;
+use crate::ui::Ui;
 use imgui::Key;
 use lobby_lib::net::packets::*;
 use lobby_lib::net::{packets, Net};
@@ -9,8 +11,6 @@ use winit::event::{Event, WindowEvent};
 use winit::event_loop::ControlFlow;
 use winit::event_loop::EventLoop;
 use winit::window::{Window, WindowBuilder};
-use crate::ui::Ui;
-use crate::ui::screens::login_screen::LoginScreen;
 
 pub enum State {
     Boot,
@@ -25,6 +25,7 @@ pub struct Application {
     pub max_fps: u32,
     pub frame_limit: FrameLimit,
     pub ui: Ui,
+    pub net: Net,
 }
 
 impl Application {
@@ -39,6 +40,7 @@ impl Application {
                 max_fps,
             ),
             ui: Ui::new(),
+            net: Net::new(),
         }
     }
 
@@ -52,9 +54,26 @@ impl Application {
         self.update(renderer, window);
         self.render(renderer, window);
 
+        let now = Instant::now();
+        let timeout = if now > self.time.next_wanted_tick {
+            crate::time::ZERO
+        } else {
+            self.time.next_wanted_tick - now
+        };
+        self.net.tick(timeout);
+
         self.frame_limit.run();
 
         self.time.tick(&self.frame_limit);
+
+        if self.time.tick_count % 60 == 0 {
+            self.net.send_message(
+                "127.0.0.1:9000".parse().unwrap(),
+                &ClientInitRequest {
+                    client_version: 12456,
+                },
+            );
+        }
     }
 
     fn handle_window_event(&mut self, event: &WindowEvent, renderer: &mut Renderer) {

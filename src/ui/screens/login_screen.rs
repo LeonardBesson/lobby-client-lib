@@ -1,5 +1,5 @@
 use crate::ui::screens::Screen;
-use imgui::{ImString, Condition, im_str};
+use imgui::{im_str, Condition, ImString};
 
 pub struct LoginScreen {
     username: ImString,
