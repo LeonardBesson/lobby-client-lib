@@ -1,6 +1,5 @@
 use crate::renderer::Renderer;
 use crate::time::{FrameLimit, FrameLimitStrategy, Time};
-use crate::ui::{LoginScreen, Ui};
 use imgui::Key;
 use lobby_lib::net::packets::*;
 use lobby_lib::net::{packets, Net};
@@ -10,6 +9,8 @@ use winit::event::{Event, WindowEvent};
 use winit::event_loop::ControlFlow;
 use winit::event_loop::EventLoop;
 use winit::window::{Window, WindowBuilder};
+use crate::ui::Ui;
+use crate::ui::screens::login_screen::LoginScreen;
 
 pub enum State {
     Boot,
