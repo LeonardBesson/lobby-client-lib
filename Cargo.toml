@@ -10,3 +10,13 @@ edition = "2018"
 
 [dependencies]
 lobby-lib = { path = "lobby-lib" }
+
+futures = "0.3.5"
+wgpu = "0.5.0"
+winit = "0.21"
+imgui-wgpu = "0.6.0"
+imgui = "0.3.0"
+
+[dependencies.imgui-winit-support]
+version = "0.3.1"
+features = ["winit-20"]
