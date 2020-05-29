@@ -23,6 +23,7 @@ impl Screen for LoginScreen {
             .size(window_size, Condition::FirstUseEver)
             .resizable(false)
             .movable(false)
+            .collapsible(false)
             .position(
                 [
                     size.width as f32 / 2.0 - window_size[0] / 2.0,

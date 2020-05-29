@@ -7,6 +7,14 @@ use crate::net::Message;
 
 pub struct ByteBuffer(Bytes);
 
+impl ByteBuffer {
+    pub fn skip(&mut self, len: usize) {
+        if len <= self.len() {
+            drop(self.0.split_to(len));
+        }
+    }
+}
+
 impl From<Bytes> for ByteBuffer {
     fn from(bytes: Bytes) -> Self {
         ByteBuffer(bytes)
@@ -38,5 +46,19 @@ impl AsRef<[u8]> for ByteBuffer {
 impl Borrow<[u8]> for ByteBuffer {
     fn borrow(&self) -> &[u8] {
         self.0.borrow()
+    }
+}
+
+#[cfg(tests)]
+mod tests {
+    use crate::utils::byte_buffer::ByteBuffer;
+    use bytes::Bytes;
+
+    #[test]
+    fn skip() {
+        let mut buffer = ByteBuffer(Bytes::from(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));
+        buffer.skip(4);
+
+        assert_eq!(&buffer[..], &[5, 6, 7, 8, 9, 10])
     }
 }

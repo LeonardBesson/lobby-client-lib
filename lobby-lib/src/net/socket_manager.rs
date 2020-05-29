@@ -95,39 +95,23 @@ impl SocketManager {
         self.flushables.insert(token);
     }
 
-    fn encode_packets(&mut self, token: mio::Token) {
+    fn flush(&mut self, token: mio::Token) {
         if let Some(sock) = self.sockets.get_mut(token.0) {
+            // Out
             while let Some(buffer) = sock.tcp_encoder.next_buffer() {
                 sock.unprocessed_out.push_back(buffer);
             }
-        }
-    }
+            sock.process_out();
 
-    fn flush(&mut self, token: mio::Token) {
-        self.encode_packets(token);
-        self.decode_packets(token);
-
-        if let Some(sock) = self.sockets.get_mut(token.0) {
-            if !sock.unprocessed_out.is_empty() {
-                self.try_to_send(token);
-            }
-        }
-    }
-
-    fn decode_packets(&mut self, token: mio::Token) {
-        if let Some(sock) = self.sockets.get_mut(token.0) {
+            // In
             sock.process_in();
             while let Some(buffer) = sock.processed_in.pop_front() {
                 sock.tcp_decoder.push_buffer(buffer);
             }
-            while let Some(packet) = sock.tcp_decoder.next_packet() {
-                println!(
-                    "Received packet Type: {:?}, Data: {:?}",
-                    packet.packet_type,
-                    &packet.data[..]
-                );
-                let msg = packet_to_message::<ClientInitRequest>(&packet);
-                println!("Casted to message: {:?}", msg);
+
+            if !sock.processed_out.is_empty() {
+                println!("hello");
+                self.try_to_send(token);
             }
         }
     }
@@ -166,7 +150,7 @@ impl SocketManager {
                 }
             }
         }
-        self.decode_packets(token);
+        self.flushables.insert(token);
     }
 
     fn try_to_send(&mut self, token: mio::Token) {
@@ -184,14 +168,15 @@ impl SocketManager {
 
         sock.process_out();
         println!("Writable, processed_out len: {}", sock.processed_out.len());
-        while let Some(buffer) = sock.processed_out.pop_front() {
+        while let Some(buffer) = sock.processed_out.front_mut() {
             match sock.stream.write(&buffer[..]) {
                 Ok(n) if n < buffer.len() => {
-                    panic!("Written less than message ({}), need to truncate buff!", n);
-                    // TODO: truncate buffer
+                    println!("Written {} bytes, truncating buffer", n);
+                    buffer.skip(n);
                 }
                 Ok(n) => {
                     println!("Written {} bytes", n);
+                    sock.processed_out.pop_front();
                 }
                 Err(e) => {
                     println!("Write error: {:?}", e);

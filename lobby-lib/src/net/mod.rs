@@ -66,6 +66,15 @@ impl Net {
 
     pub fn tick(&mut self, timeout: Duration) {
         self.socket_manager.tick(timeout);
+        // while let Some(packet) = sock.tcp_decoder.next_packet() {
+        //     println!(
+        //         "Received packet Type: {:?}, Data: {:?}",
+        //         packet.packet_type,
+        //         &packet.data[..]
+        //     );
+        //     let msg = packet_to_message::<ClientInitRequest>(&packet);
+        //     println!("Casted to message: {:?}", msg);
+        // }
     }
 
     pub fn send_message<'de, T: Message<'de>>(&mut self, peer: SocketAddr, message: &T) {
