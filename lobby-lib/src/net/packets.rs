@@ -34,7 +34,10 @@ macro_rules! declare_packets {
 
             impl crate::net::Message<'_> for $struct {
                 fn packet_type(&self) -> PacketType {
-                    PacketType::$struct
+                    Self::TYPE
+                }
+                fn packet_info(&self) -> PacketInfo {
+                    Self::INFO
                 }
             }
         )+

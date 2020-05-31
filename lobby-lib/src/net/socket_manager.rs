@@ -110,7 +110,6 @@ impl SocketManager {
             }
 
             if !sock.processed_out.is_empty() {
-                println!("hello");
                 self.try_to_send(token);
             }
         }
@@ -161,7 +160,7 @@ impl SocketManager {
         if !sock.initialized {
             sock.stream
                 .set_nodelay(true)
-                .expect("Could not1 set nodelay on socket");
+                .expect("Could not set nodelay on socket");
             sock.initialized = true;
             println!("Set nodelay for socket {}", token.0);
         }

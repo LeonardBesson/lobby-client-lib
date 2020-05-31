@@ -10,7 +10,7 @@ use bytes::Bytes;
 use mio::{Interest, Registry, Token};
 use mio::net::TcpStream;
 
-use crate::net::packet::{message_to_packet, Packet, PacketType};
+use crate::net::packet::{message_to_packet, Packet, PacketType, PacketInfo};
 use crate::net::packet_encoder::PacketEncoder;
 use crate::net::socket_manager::SocketManager;
 use crate::net::transport::tcp_socket::TcpSocket;
@@ -38,6 +38,7 @@ pub enum ErrorKind {
 
 pub trait Message<'de>: Serialize + Deserialize<'de> {
     fn packet_type(&self) -> PacketType;
+    fn packet_info(&self) -> PacketInfo;
     fn serialize_data(&self) -> bincode::Result<Vec<u8>> {
         bincode::serialize(&self)
     }
