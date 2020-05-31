@@ -2,8 +2,8 @@ use num_derive::FromPrimitive;
 use serde::{Deserialize, Serialize};
 
 use crate::net;
-use crate::net::{ErrorKind, packets};
 use crate::net::Message;
+use crate::net::{packets, ErrorKind};
 use crate::utils::byte_buffer::ByteBuffer;
 
 #[derive(Debug, Copy, Clone)]

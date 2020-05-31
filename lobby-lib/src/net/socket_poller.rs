@@ -4,8 +4,8 @@ use std::time::Duration;
 
 use mio::Interest;
 
-use crate::net::SocketEvent;
 use crate::net::transport::tcp_socket::TcpSocket;
+use crate::net::SocketEvent;
 
 pub struct SocketPoller {
     poll: mio::Poll,

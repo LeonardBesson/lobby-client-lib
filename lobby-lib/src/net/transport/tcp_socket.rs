@@ -1,12 +1,13 @@
 use std::collections::VecDeque;
 use std::io;
 
-use mio::{Interest, Registry, Token};
 use mio::net::TcpStream;
+use mio::{Interest, Registry, Token};
 
 use crate::net::packet::Packet;
 use crate::net::packet_decoder::PacketDecoder;
 use crate::net::packet_encoder::PacketEncoder;
+use crate::utils::buffer_processor::{BufferProcessor, Direction};
 use crate::utils::byte_buffer::ByteBuffer;
 
 pub struct TcpSocket {
@@ -15,7 +16,7 @@ pub struct TcpSocket {
     pub initialized: bool,
     pub tcp_encoder: PacketEncoder,
     pub tcp_decoder: PacketDecoder,
-
+    buffer_processors: Vec<Box<dyn BufferProcessor>>,
     pub unprocessed_in: VecDeque<ByteBuffer>,
     pub unprocessed_out: VecDeque<ByteBuffer>,
     pub processed_in: VecDeque<ByteBuffer>,
@@ -30,6 +31,7 @@ impl TcpSocket {
             initialized: false,
             tcp_encoder: PacketEncoder::new(8 * 1024),
             tcp_decoder: PacketDecoder::new(),
+            buffer_processors: Vec::new(),
             unprocessed_in: VecDeque::new(),
             unprocessed_out: VecDeque::new(),
             processed_in: VecDeque::new(),
@@ -39,6 +41,10 @@ impl TcpSocket {
 
     pub fn token(&self) -> mio::Token {
         self.token
+    }
+
+    pub fn add_buffer_processor(&mut self, buffer_processor: Box<dyn BufferProcessor>) {
+        self.buffer_processors.push(buffer_processor);
     }
 
     pub fn send_packet(&mut self, packet: Packet) {
@@ -52,14 +58,18 @@ impl TcpSocket {
     }
 
     pub fn process_in(&mut self) {
-        // TODO: processors
-        while let Some(buffer) = self.unprocessed_in.pop_front() {
+        while let Some(mut buffer) = self.unprocessed_in.pop_front() {
+            for processor in self.buffer_processors.iter_mut().rev() {
+                processor.process_buffer(&mut buffer, Direction::In);
+            }
             self.processed_in.push_back(buffer);
         }
     }
     pub fn process_out(&mut self) {
-        // TODO: processors
-        while let Some(buffer) = self.unprocessed_out.pop_front() {
+        while let Some(mut buffer) = self.unprocessed_out.pop_front() {
+            for processor in self.buffer_processors.iter_mut().rev() {
+                processor.process_buffer(&mut buffer, Direction::Out);
+            }
             self.processed_out.push_back(buffer);
         }
     }

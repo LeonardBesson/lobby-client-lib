@@ -1,17 +1,18 @@
-use std::{io, mem};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::io::{Read, Write};
 use std::net::{Shutdown, SocketAddr};
 use std::time::{Duration, Instant};
+use std::{io, mem};
 
 use bytes::{Bytes, BytesMut};
 use mio::net::TcpStream;
 
-use crate::net::packet::{Packet, packet_to_message};
+use crate::net::packet::{packet_to_message, Packet};
 use crate::net::packets::ClientInitRequest;
 use crate::net::socket_poller::SocketPoller;
-use crate::net::SocketEvent;
 use crate::net::transport::tcp_socket::TcpSocket;
+use crate::net::SocketEvent;
+use crate::utils::buffer_processor::LogBufferProcessor;
 use crate::utils::byte_buffer::ByteBuffer;
 
 pub struct SocketManager {
@@ -43,6 +44,7 @@ impl SocketManager {
             mio::Token(self.sockets.len())
         };
         let mut socket = TcpSocket::new(stream, token);
+        socket.add_buffer_processor(Box::new(LogBufferProcessor));
         self.poller.register_socket(&mut socket)?;
         self.sockets.insert(token.0, socket);
         self.tokens.insert(addr, token);

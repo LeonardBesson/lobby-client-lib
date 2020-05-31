@@ -2,8 +2,8 @@ use std::collections::VecDeque;
 use std::io::Write;
 
 use byteorder::{BigEndian, ByteOrder, ReadBytesExt, WriteBytesExt};
-use bytes::{Buf, BufMut, BytesMut};
 use bytes::buf::BufExt;
+use bytes::{Buf, BufMut, BytesMut};
 use num_traits::FromPrimitive;
 
 use crate::net::packet::{Packet, PacketFlag, PacketType};
