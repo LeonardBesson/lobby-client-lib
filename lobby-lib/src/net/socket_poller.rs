@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use mio::Interest;
 
+use crate::net::connection::Connection;
 use crate::net::transport::tcp_socket::TcpSocket;
 use crate::net::SocketEvent;
 
@@ -22,10 +23,10 @@ impl SocketPoller {
         Self { poll, events }
     }
 
-    pub fn register_socket(&mut self, socket: &mut TcpSocket) -> io::Result<()> {
+    pub fn register_connection(&mut self, conn: &mut Connection) -> io::Result<()> {
         self.poll.registry().register(
-            socket,
-            socket.token,
+            &mut conn.socket,
+            conn.token,
             Interest::READABLE | Interest::WRITABLE,
         )
     }

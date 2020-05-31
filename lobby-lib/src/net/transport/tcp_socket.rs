@@ -9,13 +9,12 @@ use crate::net::packet_decoder::PacketDecoder;
 use crate::net::packet_encoder::PacketEncoder;
 use crate::utils::buffer_processor::{BufferProcessor, Direction};
 use crate::utils::byte_buffer::ByteBuffer;
+use std::net::Shutdown;
 
 pub struct TcpSocket {
     pub stream: TcpStream,
-    pub token: mio::Token,
-    pub initialized: bool,
-    pub tcp_encoder: PacketEncoder,
-    pub tcp_decoder: PacketDecoder,
+    connected: bool,
+
     buffer_processors: Vec<Box<dyn BufferProcessor>>,
     pub unprocessed_in: VecDeque<ByteBuffer>,
     pub unprocessed_out: VecDeque<ByteBuffer>,
@@ -24,13 +23,10 @@ pub struct TcpSocket {
 }
 
 impl TcpSocket {
-    pub fn new(stream: TcpStream, token: mio::Token) -> Self {
+    pub fn new(stream: TcpStream) -> Self {
         Self {
             stream,
-            token,
-            initialized: false,
-            tcp_encoder: PacketEncoder::new(8 * 1024),
-            tcp_decoder: PacketDecoder::new(),
+            connected: false,
             buffer_processors: Vec::new(),
             unprocessed_in: VecDeque::new(),
             unprocessed_out: VecDeque::new(),
@@ -39,22 +35,26 @@ impl TcpSocket {
         }
     }
 
-    pub fn token(&self) -> mio::Token {
-        self.token
+    pub fn is_connected(&self) -> bool {
+        self.connected
+    }
+
+    pub fn connected(&mut self) {
+        self.stream
+            .set_nodelay(true)
+            .expect("Could not set nodelay on socket");
+        self.connected = true;
+    }
+
+    pub fn close(&mut self) {
+        if self.connected {
+            self.stream.shutdown(Shutdown::Both);
+            self.connected = false;
+        }
     }
 
     pub fn add_buffer_processor(&mut self, buffer_processor: Box<dyn BufferProcessor>) {
         self.buffer_processors.push(buffer_processor);
-    }
-
-    pub fn send_packet(&mut self, packet: Packet) {
-        println!("Sending packet of length {}", packet.data_size());
-        self.tcp_encoder.add_packet(packet);
-    }
-
-    pub fn next_packet(&mut self) -> Option<Packet> {
-        self.process_in();
-        self.tcp_decoder.next_packet()
     }
 
     pub fn process_in(&mut self) {
@@ -67,7 +67,7 @@ impl TcpSocket {
     }
     pub fn process_out(&mut self) {
         while let Some(mut buffer) = self.unprocessed_out.pop_front() {
-            for processor in self.buffer_processors.iter_mut().rev() {
+            for processor in self.buffer_processors.iter_mut() {
                 processor.process_buffer(&mut buffer, Direction::Out);
             }
             self.processed_out.push_back(buffer);

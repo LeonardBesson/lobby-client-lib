@@ -10,18 +10,19 @@ use bytes::Bytes;
 use mio::net::TcpStream;
 use mio::{Interest, Registry, Token};
 
+use crate::net::connection_manager::ConnectionManager;
 use crate::net::packet::{message_to_packet, Packet, PacketInfo, PacketType};
 use crate::net::packet_encoder::PacketEncoder;
-use crate::net::socket_manager::SocketManager;
 use crate::net::transport::tcp_socket::TcpSocket;
 use crate::utils::byte_buffer::ByteBuffer;
 use serde::{Deserialize, Serialize};
 
+pub mod connection;
+pub mod connection_manager;
 pub mod packet;
 pub mod packet_decoder;
 pub mod packet_encoder;
 pub mod packets;
-pub mod socket_manager;
 pub mod socket_poller;
 pub mod transport;
 
@@ -55,13 +56,13 @@ enum SocketEvent {
 }
 
 pub struct Net {
-    socket_manager: SocketManager,
+    socket_manager: ConnectionManager,
 }
 
 impl Net {
     pub fn new() -> Self {
         Self {
-            socket_manager: SocketManager::new(),
+            socket_manager: ConnectionManager::new(),
         }
     }
 
