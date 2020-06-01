@@ -100,7 +100,7 @@ impl PacketEncoder {
 
 #[cfg(test)]
 mod tests {
-    use crate::net::packet::{Packet};
+    use crate::net::packet::Packet;
     use crate::net::packet_encoder::PacketEncoder;
     use crate::net::packets::PacketType;
 

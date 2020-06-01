@@ -13,10 +13,10 @@ use mio::{Interest, Registry, Token};
 use crate::net::connection_manager::ConnectionManager;
 use crate::net::packet::{message_to_packet, Packet, PacketInfo};
 use crate::net::packet_encoder::PacketEncoder;
+use crate::net::packets::PacketType;
 use crate::net::transport::tcp_socket::TcpSocket;
 use crate::utils::byte_buffer::ByteBuffer;
 use serde::{Deserialize, Serialize};
-use crate::net::packets::PacketType;
 
 pub mod connection;
 pub mod connection_manager;
@@ -28,6 +28,7 @@ pub mod socket_poller;
 pub mod transport;
 
 pub const PROTOCOL_VERSION: u16 = 1;
+pub const APP_VERSION: u16 = 1;
 
 pub type Result<T> = ::std::result::Result<T, Error>;
 

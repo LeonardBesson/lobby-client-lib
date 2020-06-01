@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
 use num_derive::FromPrimitive;
+use serde::{Deserialize, Serialize};
 
-use crate::net::packet::{PacketInfo};
+use crate::net::packet::PacketInfo;
 
 const MAX_PACKET_TYPES: usize = 500;
 

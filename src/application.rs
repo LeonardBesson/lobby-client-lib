@@ -3,6 +3,7 @@ use crate::time::{FrameLimit, FrameLimitStrategy, Time};
 use crate::ui::screens::login_screen::LoginScreen;
 use crate::ui::Ui;
 use imgui::Key;
+use lobby_lib::net;
 use lobby_lib::net::packets::*;
 use lobby_lib::net::{packets, Net};
 use std::time::{Duration, Instant};
@@ -11,9 +12,6 @@ use winit::event::{Event, WindowEvent};
 use winit::event_loop::ControlFlow;
 use winit::event_loop::EventLoop;
 use winit::window::{Window, WindowBuilder};
-use lobby_lib::net;
-
-pub const APP_VERSION: u16 = 1;
 
 pub enum State {
     Boot,
@@ -69,15 +67,15 @@ impl Application {
 
         self.time.tick(&self.frame_limit);
 
-        if self.time.tick_count % 60 == 0 {
-            self.net.send_message(
-                "127.0.0.1:9000".parse().unwrap(),
-                &PacketInit {
-                    protocol_version: net::PROTOCOL_VERSION,
-                    app_version: APP_VERSION,
-                },
-            );
-        }
+        // if self.time.tick_count % 60 == 0 {
+        //     self.net.send_message(
+        //         "127.0.0.1:9000".parse().unwrap(),
+        //         &PacketInit {
+        //             protocol_version: net::PROTOCOL_VERSION,
+        //             app_version: APP_VERSION,
+        //         },
+        //     );
+        // }
     }
 
     fn handle_window_event(&mut self, event: &WindowEvent, renderer: &mut Renderer) {

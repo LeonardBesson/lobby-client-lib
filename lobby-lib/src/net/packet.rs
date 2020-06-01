@@ -2,10 +2,10 @@ use num_derive::FromPrimitive;
 use serde::{Deserialize, Serialize};
 
 use crate::net;
+use crate::net::packets::PacketType;
 use crate::net::Message;
 use crate::net::{packets, ErrorKind};
 use crate::utils::byte_buffer::ByteBuffer;
-use crate::net::packets::PacketType;
 
 #[derive(Debug, Copy, Clone)]
 #[repr(u8)]
