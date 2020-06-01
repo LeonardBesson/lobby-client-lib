@@ -10,7 +10,10 @@ use std::io::{Read, Write};
 use std::net::{Shutdown, SocketAddr};
 
 pub enum ConnState {
-    // TODO
+    Initializing,
+    Authenticating,
+    Running,
+    Closed,
 }
 
 pub struct PeerInfo {
@@ -26,6 +29,8 @@ impl PeerInfo {
 pub struct Connection {
     pub token: mio::Token,
     pub peer_info: PeerInfo,
+    pub state: ConnState,
+
     pub socket: TcpSocket,
     pub tcp_encoder: PacketEncoder,
     pub tcp_decoder: PacketDecoder,
@@ -39,6 +44,7 @@ impl Connection {
         Ok(Self {
             token,
             peer_info: PeerInfo::new(addr),
+            state: ConnState::Initializing,
             socket,
             tcp_encoder: PacketEncoder::new(8 * 1024),
             tcp_decoder: PacketDecoder::new(),
@@ -80,7 +86,8 @@ impl Connection {
         self.socket.close();
     }
 
-    /// Read as much as possible into the given buffer,
+    /// Read as much as possible from the connection's socket.
+    /// Buffers are read into the given buffer, and pushed to be processed.
     pub fn read(&mut self, read_buffer: &mut [u8]) -> io::Result<()> {
         loop {
             let res = self.socket.stream.read(read_buffer);
@@ -100,6 +107,7 @@ impl Connection {
         }
     }
 
+    /// Process buffers and write as much as possible to the connection's socket.
     pub fn write(&mut self) -> io::Result<()> {
         if !self.socket.is_connected() {
             // Connected (i.e we received the first write event after connect)

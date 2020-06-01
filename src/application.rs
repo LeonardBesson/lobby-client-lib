@@ -11,6 +11,9 @@ use winit::event::{Event, WindowEvent};
 use winit::event_loop::ControlFlow;
 use winit::event_loop::EventLoop;
 use winit::window::{Window, WindowBuilder};
+use lobby_lib::net;
+
+pub const APP_VERSION: u16 = 1;
 
 pub enum State {
     Boot,
@@ -69,8 +72,9 @@ impl Application {
         if self.time.tick_count % 60 == 0 {
             self.net.send_message(
                 "127.0.0.1:9000".parse().unwrap(),
-                &ClientInitRequest {
-                    client_version: 12456,
+                &PacketInit {
+                    protocol_version: net::PROTOCOL_VERSION,
+                    app_version: APP_VERSION,
                 },
             );
         }

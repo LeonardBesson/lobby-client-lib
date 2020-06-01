@@ -6,8 +6,9 @@ use bytes::buf::BufExt;
 use bytes::{Buf, BufMut, BytesMut};
 use num_traits::FromPrimitive;
 
-use crate::net::packet::{Packet, PacketFlag, PacketType};
+use crate::net::packet::{Packet, PacketFlag};
 use crate::net::packets;
+use crate::net::packets::PacketType;
 use crate::utils::byte_buffer::ByteBuffer;
 
 const MAX_PACKET_HEADER_SIZE: usize = 22;
@@ -105,14 +106,15 @@ impl PacketDecoder {
 
 #[cfg(test)]
 mod tests {
-    use crate::net::packet::{Packet, PacketFlag, PacketType};
+    use crate::net::packet::{Packet, PacketFlag};
     use crate::net::packet_decoder::PacketDecoder;
     use crate::net::packet_encoder::PacketEncoder;
+    use crate::net::packets::PacketType;
 
     #[test]
     fn single_packet() {
         let mut encoder = PacketEncoder::new(256);
-        encoder.add_packet(Packet::new(PacketType::ClientInitRequest, vec![1; 25]));
+        encoder.add_packet(Packet::new(PacketType::PacketInit, vec![1; 25]));
         let buffer = encoder.next_buffer().unwrap();
         assert_eq!(buffer.len(), 3 + 25);
 
@@ -121,7 +123,7 @@ mod tests {
         let packet = decoder.next_packet().unwrap();
         assert!(packet.short_type());
         assert!(packet.short_size());
-        assert_eq!(packet.packet_type, PacketType::ClientInitRequest);
+        assert_eq!(packet.packet_type, PacketType::PacketInit);
         assert_eq!(&packet.data[..], &[1; 25]);
 
         assert!(decoder.next_packet().is_none());
@@ -130,8 +132,8 @@ mod tests {
     #[test]
     fn multiple_packets() {
         let mut encoder = PacketEncoder::new(256);
-        encoder.add_packet(Packet::new(PacketType::ClientInitRequest, vec![1; 25]));
-        encoder.add_packet(Packet::new(PacketType::ClientInitRequest, vec![1; 75]));
+        encoder.add_packet(Packet::new(PacketType::PacketInit, vec![1; 25]));
+        encoder.add_packet(Packet::new(PacketType::PacketInit, vec![1; 75]));
         let buffer = encoder.next_buffer().unwrap();
         assert_eq!(buffer.len(), 3 + 25 + 3 + 75);
 
@@ -140,13 +142,13 @@ mod tests {
         let packet = decoder.next_packet().unwrap();
         assert!(packet.short_type());
         assert!(packet.short_size());
-        assert_eq!(packet.packet_type, PacketType::ClientInitRequest);
+        assert_eq!(packet.packet_type, PacketType::PacketInit);
         assert_eq!(&packet.data[..], &[1; 25]);
 
         let packet = decoder.next_packet().unwrap();
         assert!(packet.short_type());
         assert!(packet.short_size());
-        assert_eq!(packet.packet_type, PacketType::ClientInitRequest);
+        assert_eq!(packet.packet_type, PacketType::PacketInit);
         assert_eq!(&packet.data[..], &vec![1; 75][..]);
 
         assert!(decoder.next_packet().is_none());

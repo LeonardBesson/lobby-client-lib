@@ -5,6 +5,7 @@ use crate::net;
 use crate::net::Message;
 use crate::net::{packets, ErrorKind};
 use crate::utils::byte_buffer::ByteBuffer;
+use crate::net::packets::PacketType;
 
 #[derive(Debug, Copy, Clone)]
 #[repr(u8)]
@@ -23,13 +24,6 @@ pub struct PacketInfo {
     pub packet_type: PacketType,
     pub name: &'static str,
     pub fixed_size: Option<usize>,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, FromPrimitive)]
-#[repr(u16)]
-pub enum PacketType {
-    ClientInitRequest = 0,
-    ClientInitResponse = 1,
 }
 
 pub struct Packet {

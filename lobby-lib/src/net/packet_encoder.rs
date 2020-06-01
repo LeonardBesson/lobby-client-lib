@@ -100,13 +100,14 @@ impl PacketEncoder {
 
 #[cfg(test)]
 mod tests {
-    use crate::net::packet::{Packet, PacketType};
+    use crate::net::packet::{Packet};
     use crate::net::packet_encoder::PacketEncoder;
+    use crate::net::packets::PacketType;
 
     #[test]
     fn single_packet() {
         let mut encoder = PacketEncoder::new(256);
-        encoder.add_packet(Packet::new(PacketType::ClientInitRequest, vec![1; 25]));
+        encoder.add_packet(Packet::new(PacketType::PacketInit, vec![1; 25]));
         let buffer = encoder.next_buffer();
         assert!(buffer.is_some());
         assert_eq!(buffer.unwrap().len(), 3 + 25);
@@ -115,12 +116,12 @@ mod tests {
     #[test]
     fn size_flag() {
         let mut encoder = PacketEncoder::new(1024);
-        encoder.add_packet(Packet::new(PacketType::ClientInitRequest, vec![1; 255]));
+        encoder.add_packet(Packet::new(PacketType::PacketInit, vec![1; 255]));
         let buffer = encoder.next_buffer();
         assert!(buffer.is_some());
         assert_eq!(buffer.unwrap().len(), 3 + 255);
 
-        encoder.add_packet(Packet::new(PacketType::ClientInitRequest, vec![1; 256]));
+        encoder.add_packet(Packet::new(PacketType::PacketInit, vec![1; 256]));
         let buffer = encoder.next_buffer();
         assert!(buffer.is_some());
         assert_eq!(buffer.unwrap().len(), 5 + 256);
@@ -129,8 +130,8 @@ mod tests {
     #[test]
     fn multiple_packets() {
         let mut encoder = PacketEncoder::new(256);
-        encoder.add_packet(Packet::new(PacketType::ClientInitRequest, vec![1; 25]));
-        encoder.add_packet(Packet::new(PacketType::ClientInitRequest, vec![1; 30]));
+        encoder.add_packet(Packet::new(PacketType::PacketInit, vec![1; 25]));
+        encoder.add_packet(Packet::new(PacketType::PacketInit, vec![1; 30]));
         let buffer = encoder.next_buffer();
         assert!(buffer.is_some());
         assert_eq!(buffer.unwrap().len(), 3 + 25 + 3 + 30);

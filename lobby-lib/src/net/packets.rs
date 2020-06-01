@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
+use num_derive::FromPrimitive;
 
-use crate::net::packet::{PacketInfo, PacketType};
+use crate::net::packet::{PacketInfo};
 
 const MAX_PACKET_TYPES: usize = 500;
 
@@ -45,11 +46,9 @@ macro_rules! declare_packets {
 }
 
 declare_packets! {
-    ClientInitRequest {
-        client_version: u64,
-    }
-    ClientInitResponse {
-        ack: bool,
+    PacketInit {
+        protocol_version: u16,
+        app_version: u16,
     }
 }
 
@@ -61,9 +60,14 @@ lazy_static! {
     };
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, FromPrimitive)]
+#[repr(u16)]
+pub enum PacketType {
+    PacketInit = 0,
+}
+
 fn init_packets(types: &mut [Option<PacketInfo>; MAX_PACKET_TYPES]) {
-    ClientInitRequest::register(types);
-    ClientInitResponse::register(types);
+    PacketInit::register(types);
 }
 
 pub fn init() {

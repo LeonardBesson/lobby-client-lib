@@ -9,7 +9,6 @@ use mio::net::TcpStream;
 
 use crate::net::connection::Connection;
 use crate::net::packet::{packet_to_message, Packet};
-use crate::net::packets::ClientInitRequest;
 use crate::net::socket_poller::SocketPoller;
 use crate::net::transport::tcp_socket::TcpSocket;
 use crate::net::SocketEvent;
