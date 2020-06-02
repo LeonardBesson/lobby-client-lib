@@ -64,13 +64,11 @@ impl Connection {
         self.tcp_encoder.add_packet(packet);
     }
 
-    pub fn flush(&mut self) {
-        // In
-        self.socket.process_in();
-        while let Some(buffer) = self.socket.processed_in.pop_front() {
-            self.tcp_decoder.push_buffer(buffer);
-        }
+    fn incoming_packet(&mut self, packet: Packet) {
+        println!("Handling packet {:?}", packet.packet_type);
+    }
 
+    pub fn flush(&mut self) {
         // Out
         while let Some(buffer) = self.tcp_encoder.next_buffer() {
             self.socket.unprocessed_out.push_back(buffer);
@@ -79,6 +77,15 @@ impl Connection {
 
         if !self.socket.processed_out.is_empty() {
             self.write();
+        }
+
+        // In
+        self.socket.process_in();
+        while let Some(buffer) = self.socket.processed_in.pop_front() {
+            self.tcp_decoder.push_buffer(buffer);
+        }
+        while let Some(packet) = self.tcp_decoder.next_packet() {
+            self.incoming_packet(packet);
         }
     }
 
@@ -107,7 +114,7 @@ impl Connection {
         }
     }
 
-    /// Process buffers and write as much as possible to the connection's socket.
+    /// Process out buffers and write as much as possible to the connection's socket.
     pub fn write(&mut self) -> io::Result<()> {
         if !self.socket.is_connected() {
             // Connected (i.e we received the first write event after connect)

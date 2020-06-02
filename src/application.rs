@@ -67,15 +67,15 @@ impl Application {
 
         self.time.tick(&self.frame_limit);
 
-        // if self.time.tick_count % 60 == 0 {
-        //     self.net.send_message(
-        //         "127.0.0.1:9000".parse().unwrap(),
-        //         &PacketInit {
-        //             protocol_version: net::PROTOCOL_VERSION,
-        //             app_version: APP_VERSION,
-        //         },
-        //     );
-        // }
+        if self.time.tick_count % 60 == 0 {
+            self.net.send_message(
+                "127.0.0.1:9000".parse().unwrap(),
+                &PacketInit {
+                    protocol_version: net::PROTOCOL_VERSION,
+                    app_version: 1,
+                },
+            );
+        }
     }
 
     fn handle_window_event(&mut self, event: &WindowEvent, renderer: &mut Renderer) {

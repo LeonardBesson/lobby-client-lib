@@ -7,7 +7,7 @@ use crate::net::packet::{Packet, PacketFlag};
 use crate::net::packets;
 use crate::utils::byte_buffer::ByteBuffer;
 
-const MAX_PACKET_HEADER_SIZE: usize = 22;
+const MAX_PACKET_HEADER_SIZE: usize = 6;
 
 pub struct PacketEncoder {
     pub target_size: usize,
@@ -44,12 +44,13 @@ impl PacketEncoder {
 
         let mut packet_count = 0;
         let mut result: Vec<u8> = Vec::with_capacity(target_size);
-        while let Some(packet) = self.packets.pop_front() {
+        while let Some(packet) = self.packets.front() {
             if !result.is_empty()
                 && packet.data_size() + MAX_PACKET_HEADER_SIZE + result.len() > target_size
             {
                 break;
             }
+            let packet = self.packets.pop_front().unwrap();
             if !packets::has(packet.packet_type) {
                 panic!("Packet type {:?} not registered", packet.packet_type);
             }

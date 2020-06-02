@@ -50,9 +50,9 @@ impl ConnectionManager {
     }
 
     fn close_connection(&mut self, token: mio::Token) {
-        if let Some(conn) = self.connections.get_mut(token.0) {
+        if let Some(mut conn) = self.connections.get_mut(token.0) {
             conn.close();
-            self.poller.deregister_socket(&mut conn.socket);
+            self.poller.deregister_connection(&mut conn);
             self.free_tokens.push_back(token);
 
             self.tokens.remove(&conn.peer_info.addr);

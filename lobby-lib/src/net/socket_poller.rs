@@ -31,8 +31,8 @@ impl SocketPoller {
         )
     }
 
-    pub fn deregister_socket(&mut self, socket: &mut TcpSocket) {
-        self.poll.registry().deregister(socket);
+    pub fn deregister_connection(&mut self, conn: &mut Connection) {
+        self.poll.registry().deregister(&mut conn.socket);
     }
 
     pub fn tick(&mut self, timeout: Duration) -> HashMap<mio::Token, u8> {
