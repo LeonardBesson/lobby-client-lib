@@ -46,6 +46,9 @@ macro_rules! declare_packets {
 }
 
 declare_packets! {
+    FatalError {
+        message: String,
+    }
     PacketInit {
         protocol_version: u16,
         app_version: u16,
@@ -63,10 +66,12 @@ lazy_static! {
 #[derive(Debug, Copy, Clone, PartialEq, FromPrimitive)]
 #[repr(u16)]
 pub enum PacketType {
-    PacketInit = 0,
+    FatalError = 0,
+    PacketInit = 1,
 }
 
 fn init_packets(types: &mut [Option<PacketInfo>; MAX_PACKET_TYPES]) {
+    FatalError::register(types);
     PacketInit::register(types);
 }
 

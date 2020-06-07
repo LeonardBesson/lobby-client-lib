@@ -30,6 +30,8 @@ pub mod transport;
 pub const PROTOCOL_VERSION: u16 = 1;
 pub const APP_VERSION: u16 = 1;
 
+pub const LOBBY_URL: &str = "127.0.0.1:9000";
+
 pub type Result<T> = ::std::result::Result<T, Error>;
 
 pub type Error = Box<ErrorKind>;
@@ -70,17 +72,12 @@ impl Net {
         }
     }
 
+    pub fn init(&mut self) {
+        self.socket_manager.connect(LOBBY_URL.parse().unwrap());
+    }
+
     pub fn tick(&mut self, timeout: Duration) {
         self.socket_manager.tick(timeout);
-        // while let Some(packet) = sock.tcp_decoder.next_packet() {
-        //     println!(
-        //         "Received packet Type: {:?}, Data: {:?}",
-        //         packet.packet_type,
-        //         &packet.data[..]
-        //     );
-        //     let msg = packet_to_message::<ClientInitRequest>(&packet);
-        //     println!("Casted to message: {:?}", msg);
-        // }
     }
 
     pub fn send_message<'de, T: Message<'de>>(&mut self, peer: SocketAddr, message: &T) {

@@ -47,6 +47,7 @@ impl Application {
 
     fn initialize(&mut self, window: &Window, renderer: &mut Renderer) {
         packets::init();
+        self.net.init();
         self.ui.init(window, renderer);
         self.ui.push_screen(Box::new(LoginScreen::new()));
     }
@@ -66,16 +67,6 @@ impl Application {
         self.frame_limit.run();
 
         self.time.tick(&self.frame_limit);
-
-        if self.time.tick_count % 60 == 0 {
-            self.net.send_message(
-                "127.0.0.1:9000".parse().unwrap(),
-                &PacketInit {
-                    protocol_version: net::PROTOCOL_VERSION,
-                    app_version: 1,
-                },
-            );
-        }
     }
 
     fn handle_window_event(&mut self, event: &WindowEvent, renderer: &mut Renderer) {

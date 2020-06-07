@@ -1,6 +1,8 @@
-use crate::net::packet::Packet;
+use crate::net;
+use crate::net::packet::{message_to_packet, packet_to_message, Packet};
 use crate::net::packet_decoder::PacketDecoder;
 use crate::net::packet_encoder::PacketEncoder;
+use crate::net::packets::*;
 use crate::net::transport::tcp_socket::TcpSocket;
 use crate::utils::buffer_processor::BufferProcessor;
 use bytes::Bytes;
@@ -66,6 +68,26 @@ impl Connection {
 
     fn incoming_packet(&mut self, packet: Packet) {
         println!("Handling packet {:?}", packet.packet_type);
+        match packet.packet_type {
+            PacketType::PacketInit => {
+                let msg = packet_to_message::<PacketInit>(&packet).unwrap();
+                if msg.app_version != net::APP_VERSION {
+                    self.disconnect("Invalid app version");
+                    return;
+                }
+                if msg.protocol_version != net::PROTOCOL_VERSION {
+                    self.disconnect("Invalid protocol version");
+                    return;
+                }
+            }
+            PacketType::FatalError => {
+                let msg = packet_to_message::<FatalError>(&packet).unwrap();
+                panic!(msg.message);
+            }
+            _ => {
+                println!("Received unhandled packet type: {:?}", packet.packet_type);
+            }
+        }
     }
 
     pub fn flush(&mut self) {
@@ -120,6 +142,15 @@ impl Connection {
             // Connected (i.e we received the first write event after connect)
             self.socket.connected();
             println!("Set nodelay for connection {}", self.token.0);
+            // Init handshake
+            self.send(
+                message_to_packet(&PacketInit {
+                    protocol_version: net::PROTOCOL_VERSION,
+                    app_version: net::APP_VERSION,
+                })
+                .unwrap(),
+            );
+            self.flush();
         }
 
         self.socket.process_out();
@@ -142,5 +173,18 @@ impl Connection {
             }
         }
         Ok(())
+    }
+
+    fn disconnect<T: Into<String>>(&mut self, error_message: T) {
+        if self.socket.is_connected() {
+            self.send(
+                message_to_packet(&FatalError {
+                    message: error_message.into(),
+                })
+                .unwrap(),
+            );
+            self.flush();
+            self.socket.close();
+        }
     }
 }

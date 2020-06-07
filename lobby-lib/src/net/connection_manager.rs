@@ -36,6 +36,13 @@ impl ConnectionManager {
         }
     }
 
+    /// Init a connection to the given address
+    pub fn connect(&mut self, addr: SocketAddr) {
+        if let Err(err) = self.new_connection(addr) {
+            println!("Could not create new connection: {:?}", err);
+        }
+    }
+
     fn new_connection(&mut self, addr: SocketAddr) -> io::Result<&mut Connection> {
         let token = self
             .free_tokens

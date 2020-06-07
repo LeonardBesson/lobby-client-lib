@@ -11,8 +11,6 @@ use crate::net::packets;
 use crate::net::packets::PacketType;
 use crate::utils::byte_buffer::ByteBuffer;
 
-const MAX_PACKET_HEADER_SIZE: usize = 22;
-
 pub struct PacketDecoder {
     stream: BytesMut,
 }
