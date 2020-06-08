@@ -13,7 +13,7 @@ use mio::{Interest, Registry, Token};
 use crate::net::connection_manager::ConnectionManager;
 use crate::net::packet::{message_to_packet, Packet, PacketInfo};
 use crate::net::packet_encoder::PacketEncoder;
-use crate::net::packets::PacketType;
+use crate::net::packets::{PacketInit, PacketType};
 use crate::net::transport::tcp_socket::TcpSocket;
 use crate::utils::byte_buffer::ByteBuffer;
 use serde::{Deserialize, Serialize};

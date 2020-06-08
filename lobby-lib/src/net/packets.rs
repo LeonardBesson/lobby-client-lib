@@ -27,7 +27,7 @@ macro_rules! declare_packets {
                     fixed_size: None,
                 };
 
-                pub fn register(packets: &mut [Option<PacketInfo>; MAX_PACKET_TYPES]) {
+                pub fn register(packets: &mut [Option<PacketInfo>; packet_count()]) {
                     assert!((Self::TYPE as usize) < MAX_PACKET_TYPES, "Max number of packets reached");
                     packets[Self::TYPE as usize] = Some(Self::INFO);
                 }
@@ -56,8 +56,8 @@ declare_packets! {
 }
 
 lazy_static! {
-    static ref PACKET_INFOS: [Option<PacketInfo>; MAX_PACKET_TYPES] = {
-        let mut types = [None; MAX_PACKET_TYPES];
+    static ref PACKET_INFOS: [Option<PacketInfo>; packet_count()] = {
+        let mut types = [None; packet_count()];
         init_packets(&mut types);
         types
     };
@@ -68,9 +68,11 @@ lazy_static! {
 pub enum PacketType {
     FatalError = 0,
     PacketInit = 1,
+
+    Last,
 }
 
-fn init_packets(types: &mut [Option<PacketInfo>; MAX_PACKET_TYPES]) {
+fn init_packets(types: &mut [Option<PacketInfo>; packet_count()]) {
     FatalError::register(types);
     PacketInit::register(types);
 }
@@ -82,8 +84,12 @@ pub fn init() {
     );
 }
 
+pub const fn packet_count() -> usize {
+    PacketType::Last as usize
+}
+
 pub fn has(packet_type: PacketType) -> bool {
-    (packet_type as usize) < MAX_PACKET_TYPES && PACKET_INFOS[packet_type as usize].is_some()
+    (packet_type as usize) < packet_count() && PACKET_INFOS[packet_type as usize].is_some()
 }
 
 pub fn get(packet_type: PacketType) -> PacketInfo {

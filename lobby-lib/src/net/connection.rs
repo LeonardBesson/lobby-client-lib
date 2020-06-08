@@ -43,14 +43,23 @@ impl Connection {
     pub fn open(addr: SocketAddr, token: mio::Token) -> io::Result<Self> {
         let stream = TcpStream::connect(addr)?;
         let mut socket = TcpSocket::new(stream);
-        Ok(Self {
+        let mut conn = Self {
             token,
             peer_info: PeerInfo::new(addr),
             state: ConnState::Initializing,
             socket,
             tcp_encoder: PacketEncoder::new(8 * 1024),
             tcp_decoder: PacketDecoder::new(),
-        })
+        };
+        // Init handshake
+        conn.send(
+            message_to_packet(&PacketInit {
+                protocol_version: net::PROTOCOL_VERSION,
+                app_version: net::APP_VERSION,
+            })
+            .unwrap(),
+        );
+        Ok(conn)
     }
 
     /// Add a buffer processor to be executed when sending and receiving buffers.
@@ -142,15 +151,6 @@ impl Connection {
             // Connected (i.e we received the first write event after connect)
             self.socket.connected();
             println!("Set nodelay for connection {}", self.token.0);
-            // Init handshake
-            self.send(
-                message_to_packet(&PacketInit {
-                    protocol_version: net::PROTOCOL_VERSION,
-                    app_version: net::APP_VERSION,
-                })
-                .unwrap(),
-            );
-            self.flush();
         }
 
         self.socket.process_out();
