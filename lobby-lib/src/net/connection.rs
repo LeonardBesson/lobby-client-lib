@@ -54,8 +54,8 @@ impl Connection {
         // Init handshake
         conn.send(
             message_to_packet(&PacketInit {
-                protocol_version: net::PROTOCOL_VERSION,
-                app_version: net::APP_VERSION,
+                protocol_version: crate::PROTOCOL_VERSION,
+                app_version: crate::APP_VERSION,
             })
             .unwrap(),
         );
@@ -80,11 +80,11 @@ impl Connection {
         match packet.packet_type {
             PacketType::PacketInit => {
                 let msg = packet_to_message::<PacketInit>(&packet).unwrap();
-                if msg.app_version != net::APP_VERSION {
+                if msg.app_version != crate::APP_VERSION {
                     self.disconnect("Invalid app version");
                     return;
                 }
-                if msg.protocol_version != net::PROTOCOL_VERSION {
+                if msg.protocol_version != crate::PROTOCOL_VERSION {
                     self.disconnect("Invalid protocol version");
                     return;
                 }

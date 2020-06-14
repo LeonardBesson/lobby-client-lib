@@ -27,9 +27,6 @@ pub mod packets;
 pub mod socket_poller;
 pub mod transport;
 
-pub const PROTOCOL_VERSION: u16 = 1;
-pub const APP_VERSION: u16 = 1;
-
 pub const LOBBY_URL: &str = "127.0.0.1:9000";
 
 pub type Result<T> = ::std::result::Result<T, Error>;
