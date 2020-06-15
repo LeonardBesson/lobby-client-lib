@@ -13,6 +13,8 @@ use crate::net::transport::tcp_socket::TcpSocket;
 use crate::utils::buffer_processor::BufferProcessor;
 use crate::{net, LobbyEvent};
 
+#[derive(Debug, Copy, Clone, PartialOrd, PartialEq)]
+#[repr(u8)]
 pub enum ConnState {
     Initializing,
     Authenticating,
@@ -111,6 +113,7 @@ impl Connection {
 
     pub fn close(&mut self) {
         self.socket.close();
+        self.state = ConnState::Closed;
     }
 
     /// Read as much as possible from the connection's socket.
@@ -177,6 +180,7 @@ impl Connection {
                     self.disconnect("Invalid protocol version");
                     return;
                 }
+                self.state = ConnState::Authenticating;
             }
             PacketType::FatalError => {
                 let msg = packet_to_message::<FatalError>(&packet).unwrap();
@@ -198,7 +202,7 @@ impl Connection {
                 .unwrap(),
             );
             self.flush();
-            self.socket.close();
+            self.close();
             self.events.push(LobbyEvent::Disconnected {
                 message: error_message.to_owned(),
             });

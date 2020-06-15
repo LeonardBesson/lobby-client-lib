@@ -1,4 +1,6 @@
+use crate::application::Action;
 use crate::ui::screens::Screen;
+use crossbeam_channel::Sender;
 use imgui::{im_str, Condition, ImString};
 use lobby_lib::LobbyEvent;
 
@@ -17,7 +19,13 @@ impl LoginScreen {
 }
 
 impl Screen for LoginScreen {
-    fn draw(&mut self, ui: &imgui::Ui, size: winit::dpi::PhysicalSize<u32>, events: &[LobbyEvent]) {
+    fn draw(
+        &mut self,
+        ui: &imgui::Ui,
+        size: winit::dpi::PhysicalSize<u32>,
+        events: &[LobbyEvent],
+        action_sender: &Sender<Action>,
+    ) {
         let window = imgui::Window::new(im_str!("Login"));
         let window_size = [260.0, 115.0];
         window
@@ -41,8 +49,10 @@ impl Screen for LoginScreen {
                 ui.spacing();
                 ui.spacing();
                 if ui.button(im_str!("Login"), [50.0, 20.0]) {
-                    println!("Username: {}", self.username.to_str());
-                    println!("Password: {}", self.password.to_str());
+                    action_sender.send(Action::Login {
+                        username: self.username.to_string(),
+                        password: self.password.to_string(),
+                    });
                 }
             });
     }

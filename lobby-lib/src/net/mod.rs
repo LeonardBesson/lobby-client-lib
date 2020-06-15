@@ -28,8 +28,6 @@ pub mod packets;
 pub mod socket_poller;
 pub mod transport;
 
-pub const LOBBY_URL: &str = "127.0.0.1:9000";
-
 pub type Result<T> = ::std::result::Result<T, Error>;
 
 pub type Error = Box<ErrorKind>;
@@ -60,24 +58,28 @@ enum SocketEvent {
 }
 
 pub struct Net {
-    socket_manager: ConnectionManager,
+    pub connection_manager: ConnectionManager,
     incoming_events: VecDeque<LobbyEvent>,
 }
 
 impl Net {
     pub fn new() -> Self {
         Self {
-            socket_manager: ConnectionManager::new(),
+            connection_manager: ConnectionManager::new(),
             incoming_events: VecDeque::new(),
         }
     }
 
-    pub fn init(&mut self) {
-        self.socket_manager.connect(LOBBY_URL.parse().unwrap());
+    pub fn connect(&mut self, addr: SocketAddr) {
+        self.connection_manager.connect(addr);
     }
 
-    pub fn tick(&mut self, events: &mut Vec<LobbyEvent>, timeout: Duration) {
-        self.socket_manager.tick(&mut self.incoming_events, timeout);
+    pub fn tick(&mut self, timeout: Duration) {
+        self.connection_manager
+            .tick(&mut self.incoming_events, timeout);
+    }
+
+    pub fn poll_events(&mut self, events: &mut Vec<LobbyEvent>) {
         events.clear();
         loop {
             if self.incoming_events.is_empty() || events.len() >= events.capacity() {
@@ -103,6 +105,6 @@ impl Net {
     }
 
     pub fn send_packet(&mut self, peer: SocketAddr, packet: Packet) {
-        self.socket_manager.send(peer, packet);
+        self.connection_manager.send(peer, packet);
     }
 }

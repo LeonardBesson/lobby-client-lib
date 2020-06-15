@@ -16,7 +16,7 @@ pub struct Timer {
     enabled: bool,
     interval: Duration,
     next_trigger: Instant,
-    repeat_count: usize,
+    repeat_count: isize,
     callback: Box<dyn FnMut() -> ()>,
 }
 
@@ -87,7 +87,7 @@ impl TimerManager {
     pub fn schedule(
         &mut self,
         interval: Duration,
-        repeat_count: usize,
+        repeat_count: isize,
         callback: impl FnMut() -> () + 'static,
     ) -> TimerHandle {
         let handle = self.current_handle;

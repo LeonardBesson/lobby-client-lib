@@ -53,6 +53,10 @@ declare_packets! {
         protocol_version: u16,
         app_version: u16,
     }
+    AuthenticationRequest {
+        username: String,
+        password: String,
+    }
 }
 
 lazy_static! {
@@ -68,6 +72,7 @@ lazy_static! {
 pub enum PacketType {
     FatalError = 0,
     PacketInit = 1,
+    AuthenticationRequest = 2,
 
     Last,
 }
@@ -75,6 +80,7 @@ pub enum PacketType {
 fn init_packets(types: &mut [Option<PacketInfo>; packet_count()]) {
     FatalError::register(types);
     PacketInit::register(types);
+    AuthenticationRequest::register(types);
 }
 
 pub fn init() {

@@ -34,24 +34,25 @@ pub struct Packet {
 
 pub fn message_to_packet<'de, T: Message<'de>>(message: &T) -> net::Result<Packet> {
     let packet_data = Message::serialize_data(message).map_err(|err| {
-        Box::new(ErrorKind::Serialize(format!(
+        ErrorKind::Serialize(format!(
             "Could not serialize packet {:?} data: {:?}",
             message.packet_type(),
             err
-        )))
+        ))
     })?;
     Ok(Packet::new(message.packet_type(), packet_data))
 }
 
 pub fn packet_to_message<'de, T: Message<'de>>(packet: &'de Packet) -> net::Result<T> {
     if !packets::has(packet.packet_type) {
-        return Err(Box::new(ErrorKind::InvalidPacketType(packet.packet_type)));
+        return Err(ErrorKind::InvalidPacketType(packet.packet_type).into());
     }
     Message::deserialize(&packet.data[..]).map_err(|err| {
-        Box::new(ErrorKind::Deserialize(format!(
+        ErrorKind::Deserialize(format!(
             "Could not deserialize packet type {:?}: {:?}",
             packet.packet_type, err
-        )))
+        ))
+        .into()
     })
 }
 

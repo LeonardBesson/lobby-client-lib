@@ -7,7 +7,7 @@ use std::{io, mem};
 use bytes::{Bytes, BytesMut};
 use mio::net::TcpStream;
 
-use crate::net::connection::Connection;
+use crate::net::connection::{ConnState, Connection};
 use crate::net::packet::{packet_to_message, Packet};
 use crate::net::socket_poller::SocketPoller;
 use crate::net::transport::tcp_socket::TcpSocket;
@@ -44,28 +44,18 @@ impl ConnectionManager {
         }
     }
 
-    fn new_connection(&mut self, addr: SocketAddr) -> io::Result<&mut Connection> {
-        let token = self
-            .free_tokens
-            .pop_front()
-            .unwrap_or_else(|| mio::Token(self.connections.len()));
-        let mut conn = Connection::open(addr, token)?;
-        conn.add_buffer_processor(Box::new(LogBufferProcessor));
-        self.poller.register_connection(&mut conn)?;
-        self.connections.insert(token.0, conn);
-        self.tokens.insert(addr, token);
-        Ok(&mut self.connections[token.0])
-    }
-
-    fn close_connection(&mut self, token: mio::Token) {
-        if let Some(mut conn) = self.connections.get_mut(token.0) {
-            conn.close();
-            self.poller.deregister_connection(&mut conn);
-            self.free_tokens.push_back(token);
-
-            self.tokens.remove(&conn.peer_info.addr);
-            // TODO: Make sure this works correctly: we shouldn't need to remove the socket
-            // just free the token, and the next one created will take its place
+    pub fn disconnect(&mut self, addr: SocketAddr, free: bool) {
+        if let Some(&token) = self.tokens.get(&addr) {
+            if let Some(mut conn) = self.connections.get_mut(token.0) {
+                if conn.state != ConnState::Closed {
+                    conn.close();
+                    self.poller.deregister_connection(&mut conn);
+                }
+                if free {
+                    self.free_tokens.push_back(token);
+                    self.tokens.remove(&conn.peer_info.addr);
+                }
+            }
         }
     }
 
@@ -88,6 +78,32 @@ impl ConnectionManager {
         self.flushables.insert(token);
     }
 
+    fn new_connection(&mut self, addr: SocketAddr) -> io::Result<&mut Connection> {
+        if let Some(token) = self.tokens.get(&addr) {
+            let new_conn = Connection::open(addr, *token)?;
+            mem::replace(&mut self.connections[token.0], new_conn);
+            Ok(&mut self.connections[token.0])
+        } else {
+            let token = self
+                .free_tokens
+                .pop_front()
+                .unwrap_or_else(|| mio::Token(self.connections.len()));
+            let mut conn = Connection::open(addr, token)?;
+            conn.add_buffer_processor(Box::new(LogBufferProcessor));
+            self.poller.register_connection(&mut conn)?;
+            self.connections.insert(token.0, conn);
+            self.tokens.insert(addr, token);
+            Ok(&mut self.connections[token.0])
+        }
+    }
+
+    fn close_connection(&mut self, token: mio::Token) {
+        if let Some(mut conn) = self.connections.get_mut(token.0) {
+            conn.close();
+            self.poller.deregister_connection(&mut conn);
+        }
+    }
+
     fn should_close(err_kind: io::ErrorKind) -> bool {
         match err_kind {
             io::ErrorKind::ConnectionReset
@@ -96,6 +112,13 @@ impl ConnectionManager {
             | io::ErrorKind::BrokenPipe => true,
             _ => false,
         }
+    }
+
+    pub fn connect_mut(&mut self, addr: SocketAddr) -> Option<&mut Connection> {
+        if let Some(token) = self.tokens.get(&addr) {
+            return self.connections.get_mut(token.0);
+        }
+        None
     }
 
     fn readable(&mut self, token: mio::Token) {

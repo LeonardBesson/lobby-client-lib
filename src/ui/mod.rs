@@ -6,9 +6,11 @@ use imgui::*;
 use imgui_winit_support::WinitPlatform;
 use winit::window::Window;
 
+use crate::application::Action;
 use crate::renderer::Renderer;
 use crate::time::Time;
 use crate::ui::screens::Screen;
+use crossbeam_channel::Sender;
 use lobby_lib::LobbyEvent;
 
 pub mod screens;
@@ -18,11 +20,12 @@ pub struct Ui {
     platform: WinitPlatform,
     renderer: Option<imgui_wgpu::Renderer>,
     mouse_cursor: Option<MouseCursor>,
+    action_sender: Sender<Action>,
     screens: Vec<Box<dyn Screen>>,
 }
 
 impl Ui {
-    pub fn new() -> Self {
+    pub fn new(action_sender: Sender<Action>) -> Self {
         let mut imgui = imgui::Context::create();
         let platform = imgui_winit_support::WinitPlatform::init(&mut imgui);
         Self {
@@ -30,6 +33,7 @@ impl Ui {
             platform,
             renderer: None,
             mouse_cursor: None,
+            action_sender,
             screens: Vec::new(),
         }
     }
@@ -97,7 +101,7 @@ impl Ui {
         let ui = self.imgui.frame();
 
         for screen in self.screens.iter_mut() {
-            screen.draw(&ui, window.inner_size(), events);
+            screen.draw(&ui, window.inner_size(), events, &self.action_sender);
         }
 
         if self.mouse_cursor != ui.mouse_cursor() {

@@ -1,19 +1,20 @@
 use crate::renderer::Renderer;
 use crate::time::{FrameLimit, FrameLimitStrategy, Time};
+use crate::ui::screens::events_screen::EventScreen;
 use crate::ui::screens::login_screen::LoginScreen;
 use crate::ui::Ui;
+use crossbeam_channel::{unbounded, Receiver};
 use imgui::Key;
 use lobby_lib::net::packets::*;
 use lobby_lib::net::{packets, Net};
-use lobby_lib::{net, LobbyEvent};
+use lobby_lib::{net, LobbyClient, LobbyEvent};
+use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 use winit::dpi::PhysicalSize;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::ControlFlow;
 use winit::event_loop::EventLoop;
 use winit::window::{Window, WindowBuilder};
-use crate::ui::screens::events_screen::EventScreen;
-use std::collections::VecDeque;
 
 pub enum State {
     Boot,
@@ -22,18 +23,30 @@ pub enum State {
     Shutdown,
 }
 
+pub enum Action {
+    Login { username: String, password: String },
+}
+
 pub struct Application {
     pub state: State,
     pub time: Time,
     pub max_fps: u32,
     pub frame_limit: FrameLimit,
     pub ui: Ui,
-    pub net: Net,
-    pub net_events: Vec<LobbyEvent>,
+    pub lobby_client: LobbyClient,
+    pub lobby_events: Vec<LobbyEvent>,
+    pub action_receiver: Receiver<Action>,
 }
 
 impl Application {
     pub fn new() -> Self {
+        let lobby_client = match LobbyClient::new("127.0.0.1:9000") {
+            Ok(client) => client,
+            Err(err) => {
+                panic!("Couldn't create lobby client:  {:?}", err);
+            }
+        };
+        let (action_sender, action_receiver) = unbounded();
         let max_fps = 60;
         Self {
             state: State::Boot,
@@ -43,15 +56,16 @@ impl Application {
                 FrameLimitStrategy::SleepAndYield(Duration::from_millis(2)),
                 max_fps,
             ),
-            ui: Ui::new(),
-            net: Net::new(),
-            net_events: Vec::with_capacity(256),
+            ui: Ui::new(action_sender),
+            lobby_client,
+            lobby_events: Vec::with_capacity(256),
+            action_receiver,
         }
     }
 
     fn initialize(&mut self, window: &Window, renderer: &mut Renderer) {
         packets::init();
-        self.net.init();
+        self.lobby_client.connect();
         self.ui.init(window, renderer);
         self.ui.add_screen(Box::new(EventScreen::new()));
         self.ui.add_screen(Box::new(LoginScreen::new()));
@@ -67,7 +81,8 @@ impl Application {
         } else {
             self.time.next_wanted_tick - now
         };
-        self.net.tick(&mut self.net_events, timeout);
+        self.lobby_client.tick(timeout);
+        self.lobby_client.poll_events(&mut self.lobby_events);
 
         self.frame_limit.run();
 
@@ -94,11 +109,18 @@ impl Application {
     }
 
     fn update(&mut self, renderer: &mut Renderer, window: &Window) {
+        while let Ok(action) = self.action_receiver.try_recv() {
+            match action {
+                Action::Login { username, password } => {
+                    self.lobby_client.authenticate(username, password);
+                }
+            }
+        }
         renderer.update(self.time.delta);
     }
 
     fn render(&mut self, renderer: &mut Renderer, window: &Window) {
-        renderer.render(&mut self.ui, &self.net_events, window, &self.time);
+        renderer.render(&mut self.ui, &self.lobby_events, window, &self.time);
     }
 
     fn shutdown(&mut self) {}
