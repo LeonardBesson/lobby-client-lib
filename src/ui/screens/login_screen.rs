@@ -1,5 +1,6 @@
 use crate::ui::screens::Screen;
 use imgui::{im_str, Condition, ImString};
+use lobby_lib::LobbyEvent;
 
 pub struct LoginScreen {
     username: ImString,
@@ -16,7 +17,7 @@ impl LoginScreen {
 }
 
 impl Screen for LoginScreen {
-    fn draw(&mut self, ui: &imgui::Ui, size: winit::dpi::PhysicalSize<u32>) {
+    fn draw(&mut self, ui: &imgui::Ui, size: winit::dpi::PhysicalSize<u32>, events: &[LobbyEvent]) {
         let window = imgui::Window::new(im_str!("Login"));
         let window_size = [260.0, 115.0];
         window

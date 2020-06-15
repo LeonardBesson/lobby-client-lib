@@ -16,6 +16,7 @@ wgpu = "0.5.0"
 winit = "0.21"
 imgui-wgpu = "0.6.0"
 imgui = "0.3.0"
+crossbeam-channel = "0.4.2"
 
 [dependencies.imgui-winit-support]
 version = "0.3.1"

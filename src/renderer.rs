@@ -4,6 +4,7 @@ use winit::window::Window;
 use crate::application::Application;
 use crate::time::Time;
 use crate::ui::Ui;
+use lobby_lib::LobbyEvent;
 
 pub struct Renderer {
     surface: wgpu::Surface,
@@ -68,7 +69,7 @@ impl Renderer {
 
     pub fn update(&mut self, delta: f32) {}
 
-    pub fn render(&mut self, ui: &mut Ui, window: &Window, time: &Time) {
+    pub fn render(&mut self, ui: &mut Ui, net_events: &[LobbyEvent], window: &Window, time: &Time) {
         let frame = self
             .swap_chain
             .get_next_texture()
@@ -77,7 +78,7 @@ impl Renderer {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-        ui.draw(&self.device, &mut encoder, &frame, window, time);
+        ui.draw(net_events, &self.device, &mut encoder, &frame, window, time);
         self.queue.submit(&[encoder.finish()]);
     }
 }

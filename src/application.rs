@@ -3,15 +3,17 @@ use crate::time::{FrameLimit, FrameLimitStrategy, Time};
 use crate::ui::screens::login_screen::LoginScreen;
 use crate::ui::Ui;
 use imgui::Key;
-use lobby_lib::net;
 use lobby_lib::net::packets::*;
 use lobby_lib::net::{packets, Net};
+use lobby_lib::{net, LobbyEvent};
 use std::time::{Duration, Instant};
 use winit::dpi::PhysicalSize;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::ControlFlow;
 use winit::event_loop::EventLoop;
 use winit::window::{Window, WindowBuilder};
+use crate::ui::screens::events_screen::EventScreen;
+use std::collections::VecDeque;
 
 pub enum State {
     Boot,
@@ -27,6 +29,7 @@ pub struct Application {
     pub frame_limit: FrameLimit,
     pub ui: Ui,
     pub net: Net,
+    pub net_events: Vec<LobbyEvent>,
 }
 
 impl Application {
@@ -42,6 +45,7 @@ impl Application {
             ),
             ui: Ui::new(),
             net: Net::new(),
+            net_events: Vec::with_capacity(256),
         }
     }
 
@@ -49,7 +53,8 @@ impl Application {
         packets::init();
         self.net.init();
         self.ui.init(window, renderer);
-        self.ui.push_screen(Box::new(LoginScreen::new()));
+        self.ui.add_screen(Box::new(EventScreen::new()));
+        self.ui.add_screen(Box::new(LoginScreen::new()));
     }
 
     fn tick(&mut self, renderer: &mut Renderer, window: &Window) {
@@ -62,7 +67,7 @@ impl Application {
         } else {
             self.time.next_wanted_tick - now
         };
-        self.net.tick(timeout);
+        self.net.tick(&mut self.net_events, timeout);
 
         self.frame_limit.run();
 
@@ -93,7 +98,7 @@ impl Application {
     }
 
     fn render(&mut self, renderer: &mut Renderer, window: &Window) {
-        renderer.render(&mut self.ui, window, &self.time);
+        renderer.render(&mut self.ui, &self.net_events, window, &self.time);
     }
 
     fn shutdown(&mut self) {}

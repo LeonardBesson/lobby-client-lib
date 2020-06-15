@@ -9,6 +9,7 @@ use std::{io, mem};
 use bytes::Bytes;
 use mio::net::TcpStream;
 use mio::{Interest, Registry, Token};
+use serde::{Deserialize, Serialize};
 
 use crate::net::connection_manager::ConnectionManager;
 use crate::net::packet::{message_to_packet, Packet, PacketInfo};
@@ -16,7 +17,7 @@ use crate::net::packet_encoder::PacketEncoder;
 use crate::net::packets::{PacketInit, PacketType};
 use crate::net::transport::tcp_socket::TcpSocket;
 use crate::utils::byte_buffer::ByteBuffer;
-use serde::{Deserialize, Serialize};
+use crate::LobbyEvent;
 
 pub mod connection;
 pub mod connection_manager;
@@ -60,12 +61,14 @@ enum SocketEvent {
 
 pub struct Net {
     socket_manager: ConnectionManager,
+    incoming_events: VecDeque<LobbyEvent>,
 }
 
 impl Net {
     pub fn new() -> Self {
         Self {
             socket_manager: ConnectionManager::new(),
+            incoming_events: VecDeque::new(),
         }
     }
 
@@ -73,8 +76,17 @@ impl Net {
         self.socket_manager.connect(LOBBY_URL.parse().unwrap());
     }
 
-    pub fn tick(&mut self, timeout: Duration) {
-        self.socket_manager.tick(timeout);
+    pub fn tick(&mut self, events: &mut Vec<LobbyEvent>, timeout: Duration) {
+        self.socket_manager.tick(&mut self.incoming_events, timeout);
+        events.clear();
+        loop {
+            if self.incoming_events.is_empty() || events.len() >= events.capacity() {
+                break;
+            }
+            if let Some(event) = self.incoming_events.pop_front() {
+                events.push(event);
+            }
+        }
     }
 
     pub fn send_message<'de, T: Message<'de>>(&mut self, peer: SocketAddr, message: &T) {

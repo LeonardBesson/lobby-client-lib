@@ -1,15 +1,17 @@
-use crate::net;
+use std::io::{Read, Write};
+use std::net::{Shutdown, SocketAddr};
+use std::{io, mem};
+
+use bytes::Bytes;
+use mio::net::TcpStream;
+
 use crate::net::packet::{message_to_packet, packet_to_message, Packet};
 use crate::net::packet_decoder::PacketDecoder;
 use crate::net::packet_encoder::PacketEncoder;
 use crate::net::packets::*;
 use crate::net::transport::tcp_socket::TcpSocket;
 use crate::utils::buffer_processor::BufferProcessor;
-use bytes::Bytes;
-use mio::net::TcpStream;
-use std::io;
-use std::io::{Read, Write};
-use std::net::{Shutdown, SocketAddr};
+use crate::{net, LobbyEvent};
 
 pub enum ConnState {
     Initializing,
@@ -36,6 +38,8 @@ pub struct Connection {
     pub socket: TcpSocket,
     pub tcp_encoder: PacketEncoder,
     pub tcp_decoder: PacketDecoder,
+
+    events: Vec<LobbyEvent>,
 }
 
 impl Connection {
@@ -50,6 +54,7 @@ impl Connection {
             socket,
             tcp_encoder: PacketEncoder::new(8 * 1024),
             tcp_decoder: PacketDecoder::new(),
+            events: Vec::new(),
         };
         // Init handshake
         conn.send(
@@ -75,28 +80,12 @@ impl Connection {
         self.tcp_encoder.add_packet(packet);
     }
 
-    fn incoming_packet(&mut self, packet: Packet) {
-        println!("Handling packet {:?}", packet.packet_type);
-        match packet.packet_type {
-            PacketType::PacketInit => {
-                let msg = packet_to_message::<PacketInit>(&packet).unwrap();
-                if msg.app_version != crate::APP_VERSION {
-                    self.disconnect("Invalid app version");
-                    return;
-                }
-                if msg.protocol_version != crate::PROTOCOL_VERSION {
-                    self.disconnect("Invalid protocol version");
-                    return;
-                }
-            }
-            PacketType::FatalError => {
-                let msg = packet_to_message::<FatalError>(&packet).unwrap();
-                panic!(msg.message);
-            }
-            _ => {
-                println!("Received unhandled packet type: {:?}", packet.packet_type);
-            }
-        }
+    pub fn has_events(&self) -> bool {
+        !self.events.is_empty()
+    }
+
+    pub fn drain_events(&mut self) -> Vec<LobbyEvent> {
+        mem::replace(&mut self.events, Vec::new())
     }
 
     pub fn flush(&mut self) {
@@ -175,16 +164,44 @@ impl Connection {
         Ok(())
     }
 
-    fn disconnect<T: Into<String>>(&mut self, error_message: T) {
+    fn incoming_packet(&mut self, packet: Packet) {
+        println!("Handling packet {:?}", packet.packet_type);
+        match packet.packet_type {
+            PacketType::PacketInit => {
+                let msg = packet_to_message::<PacketInit>(&packet).unwrap();
+                if msg.app_version != crate::APP_VERSION {
+                    self.disconnect("Invalid app version");
+                    return;
+                }
+                if msg.protocol_version != crate::PROTOCOL_VERSION {
+                    self.disconnect("Invalid protocol version");
+                    return;
+                }
+            }
+            PacketType::FatalError => {
+                let msg = packet_to_message::<FatalError>(&packet).unwrap();
+                self.disconnect(&msg.message);
+                return;
+            }
+            _ => {
+                println!("Received unhandled packet type: {:?}", packet.packet_type);
+            }
+        }
+    }
+
+    fn disconnect(&mut self, error_message: &str) {
         if self.socket.is_connected() {
             self.send(
                 message_to_packet(&FatalError {
-                    message: error_message.into(),
+                    message: error_message.to_owned(),
                 })
                 .unwrap(),
             );
             self.flush();
             self.socket.close();
+            self.events.push(LobbyEvent::Disconnected {
+                message: error_message.to_owned(),
+            });
         }
     }
 }

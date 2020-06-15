@@ -9,6 +9,7 @@ use winit::window::Window;
 use crate::renderer::Renderer;
 use crate::time::Time;
 use crate::ui::screens::Screen;
+use lobby_lib::LobbyEvent;
 
 pub mod screens;
 
@@ -17,7 +18,7 @@ pub struct Ui {
     platform: WinitPlatform,
     renderer: Option<imgui_wgpu::Renderer>,
     mouse_cursor: Option<MouseCursor>,
-    current_screen: Option<Box<dyn Screen>>,
+    screens: Vec<Box<dyn Screen>>,
 }
 
 impl Ui {
@@ -29,7 +30,7 @@ impl Ui {
             platform,
             renderer: None,
             mouse_cursor: None,
-            current_screen: None,
+            screens: Vec::new(),
         }
     }
 
@@ -75,12 +76,13 @@ impl Ui {
             .handle_event(self.imgui.io_mut(), window, event);
     }
 
-    pub fn push_screen(&mut self, screen: Box<dyn Screen>) {
-        self.current_screen = Some(screen);
+    pub fn add_screen(&mut self, screen: Box<dyn Screen>) {
+        self.screens.push(screen);
     }
 
     pub fn draw(
         &mut self,
+        events: &[LobbyEvent],
         device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         frame: &wgpu::SwapChainOutput,
@@ -94,8 +96,8 @@ impl Ui {
             .expect("Failed to prepare frame");
         let ui = self.imgui.frame();
 
-        if let Some(screen) = self.current_screen.as_mut() {
-            screen.draw(&ui, window.inner_size());
+        for screen in self.screens.iter_mut() {
+            screen.draw(&ui, window.inner_size(), events);
         }
 
         if self.mouse_cursor != ui.mouse_cursor() {

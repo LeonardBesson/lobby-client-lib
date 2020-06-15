@@ -14,6 +14,7 @@ use crate::net::transport::tcp_socket::TcpSocket;
 use crate::net::SocketEvent;
 use crate::utils::buffer_processor::LogBufferProcessor;
 use crate::utils::byte_buffer::ByteBuffer;
+use crate::LobbyEvent;
 
 pub struct ConnectionManager {
     poller: SocketPoller,
@@ -136,7 +137,7 @@ impl ConnectionManager {
         }
     }
 
-    pub fn tick(&mut self, timeout: Duration) {
+    pub fn tick(&mut self, incoming_events: &mut VecDeque<LobbyEvent>, timeout: Duration) {
         let triggers = self.poller.tick(timeout);
         for (&token, &trigger) in triggers.iter() {
             if (trigger & SocketEvent::Readable as u8) != 0 {
@@ -155,6 +156,9 @@ impl ConnectionManager {
             for token in flushables {
                 if let Some(conn) = self.connections.get_mut(token.0) {
                     conn.flush();
+                    if conn.has_events() {
+                        incoming_events.extend(conn.drain_events());
+                    }
                 }
             }
         }
