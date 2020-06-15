@@ -5,8 +5,11 @@ use std::net::SocketAddr;
 use std::time::Duration;
 
 use crate::net::connection::{ConnState, Connection};
+use crate::net::connection_manager::ConnectionManager;
+use crate::net::packet::{message_to_packet, Packet};
 use crate::net::packets::*;
-use crate::net::{Message, Net};
+use crate::net::Message;
+use std::collections::VecDeque;
 
 pub const PROTOCOL_VERSION: u16 = 1;
 pub const APP_VERSION: u16 = 1;
@@ -31,8 +34,8 @@ pub enum ErrorKind {
 
 pub struct LobbyClient {
     addr: SocketAddr,
-    net: Net,
-    events: Vec<LobbyEvent>,
+    connection_manager: ConnectionManager,
+    incoming_events: VecDeque<LobbyEvent>,
 }
 
 impl LobbyClient {
@@ -42,25 +45,34 @@ impl LobbyClient {
             .map_err(|_| ErrorKind::InvalidArg(format!("Invalid url {}", url)))?;
         Ok(Self {
             addr,
-            net: Net::new(),
-            events: Vec::new(),
+            connection_manager: ConnectionManager::new(),
+            incoming_events: VecDeque::new(),
         })
     }
 
     pub fn connect(&mut self) {
-        self.net.connect(self.addr);
+        self.connection_manager.connect(self.addr);
     }
 
     pub fn disconnect(&mut self, free: bool) {
-        self.net.connection_manager.disconnect(self.addr, free);
+        self.connection_manager.disconnect(self.addr, free);
     }
 
     pub fn tick(&mut self, timeout: Duration) {
-        self.net.tick(timeout);
+        self.connection_manager
+            .tick(&mut self.incoming_events, timeout);
     }
 
     pub fn poll_events(&mut self, events: &mut Vec<LobbyEvent>) {
-        self.net.poll_events(events);
+        events.clear();
+        loop {
+            if self.incoming_events.is_empty() || events.len() >= events.capacity() {
+                break;
+            }
+            if let Some(event) = self.incoming_events.pop_front() {
+                events.push(event);
+            }
+        }
     }
 
     pub fn authenticate(&mut self, username: String, password: String) {
@@ -76,7 +88,7 @@ impl LobbyClient {
     }
 
     fn send_to_lobby<'de, T: Message<'de>>(&mut self, message: T) {
-        self.net.send_message(self.addr, &message);
+        self.send_message(self.addr, &message);
     }
 
     fn initialized(&mut self) -> bool {
@@ -88,9 +100,25 @@ impl LobbyClient {
     }
 
     fn connection_mut(&mut self) -> &mut Connection {
-        self.net
-            .connection_manager
+        self.connection_manager
             .connect_mut(self.addr)
             .expect("connect() never called")
+    }
+
+    fn send_message<'de, T: Message<'de>>(&mut self, peer: SocketAddr, message: &T) {
+        let packet_type = message.packet_type();
+        match message_to_packet(message) {
+            Ok(packet) => {
+                self.send_packet(peer, packet);
+            }
+            Err(err) => {
+                println!("Could not convert message {:?} to packet", packet_type);
+                return;
+            }
+        }
+    }
+
+    fn send_packet(&mut self, peer: SocketAddr, packet: Packet) {
+        self.connection_manager.send(peer, packet);
     }
 }
