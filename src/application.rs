@@ -2,6 +2,7 @@ use crate::renderer::Renderer;
 use crate::time::{FrameLimit, FrameLimitStrategy, Time};
 use crate::ui::screens::events_screen::EventScreen;
 use crate::ui::screens::login_screen::LoginScreen;
+use crate::ui::screens::root_screen::RootScreen;
 use crate::ui::Ui;
 use crossbeam_channel::{unbounded, Receiver};
 use lobby_lib::net::packets;
@@ -23,6 +24,7 @@ pub enum State {
 }
 
 pub enum Action {
+    Exit,
     Login { username: String, password: String },
 }
 
@@ -66,6 +68,7 @@ impl Application {
         packets::init();
         self.lobby_client.connect();
         self.ui.init(window, renderer);
+        self.ui.add_screen(Box::new(RootScreen));
         self.ui.add_screen(Box::new(EventScreen::new()));
         self.ui.add_screen(Box::new(LoginScreen::new()));
     }
@@ -113,6 +116,9 @@ impl Application {
                 Action::Login { username, password } => {
                     self.lobby_client.authenticate(username, password);
                 }
+                Action::Exit => {
+                    self.state = State::Shutdown;
+                }
             }
         }
         renderer.update(self.time.delta);
@@ -122,7 +128,9 @@ impl Application {
         renderer.render(&mut self.ui, &self.lobby_events, window, &self.time);
     }
 
-    fn shutdown(&mut self) {}
+    fn shutdown(&mut self) {
+        self.lobby_client.disconnect(true);
+    }
 
     pub async fn run(mut self) {
         let event_loop = EventLoop::new();

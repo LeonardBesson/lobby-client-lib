@@ -4,6 +4,7 @@ use lobby_lib::LobbyEvent;
 
 pub mod events_screen;
 pub mod login_screen;
+pub mod root_screen;
 
 pub trait Screen {
     fn draw(
