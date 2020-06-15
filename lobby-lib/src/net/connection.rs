@@ -1,10 +1,3 @@
-use std::io::{Read, Write};
-use std::net::{Shutdown, SocketAddr};
-use std::{io, mem};
-
-use bytes::Bytes;
-use mio::net::TcpStream;
-
 use crate::net::packet::{message_to_packet, packet_to_message, Packet};
 use crate::net::packet_decoder::PacketDecoder;
 use crate::net::packet_encoder::PacketEncoder;
@@ -12,6 +5,12 @@ use crate::net::packets::*;
 use crate::net::transport::tcp_socket::TcpSocket;
 use crate::utils::buffer_processor::BufferProcessor;
 use crate::{net, LobbyEvent};
+use bytes::Bytes;
+use log::{debug, error};
+use mio::net::TcpStream;
+use std::io::{Read, Write};
+use std::net::{Shutdown, SocketAddr};
+use std::{io, mem};
 
 #[derive(Debug, Copy, Clone, PartialOrd, PartialEq)]
 #[repr(u8)]
@@ -122,9 +121,9 @@ impl Connection {
         loop {
             let res = self.socket.stream.read(read_buffer);
             if let Ok(n) = res {
-                println!("Read {} bytes", n);
+                debug!("Read {} bytes", n);
                 if n > 0 {
-                    println!("Read buffer: {:?}", &read_buffer[..n]);
+                    debug!("Read buffer: {:?}", &read_buffer[..n]);
                     self.socket
                         .unprocessed_in
                         .push_back(Bytes::copy_from_slice(&read_buffer[..n]).into())
@@ -142,11 +141,11 @@ impl Connection {
         if !self.socket.is_connected() {
             // Connected (i.e we received the first write event after connect)
             self.socket.connected();
-            println!("Set nodelay for connection {}", self.token.0);
+            debug!("Set nodelay for connection {}", self.token.0);
         }
 
         self.socket.process_out();
-        println!(
+        debug!(
             "Writable, processed_out len: {}",
             self.socket.processed_out.len()
         );
@@ -154,11 +153,11 @@ impl Connection {
             let res = self.socket.stream.write(&buffer[..]);
             match res {
                 Ok(n) if n < buffer.len() => {
-                    println!("Written {} bytes, truncating buffer", n);
+                    debug!("Written {} bytes, truncating buffer", n);
                     buffer.skip(n);
                 }
                 Ok(n) => {
-                    println!("Written {} bytes", n);
+                    debug!("Written {} bytes", n);
                     self.socket.processed_out.pop_front();
                 }
                 _ => return res.map(|_| ()),
@@ -168,7 +167,7 @@ impl Connection {
     }
 
     fn incoming_packet(&mut self, packet: Packet) {
-        println!("Handling packet {:?}", packet.packet_type);
+        debug!("Handling packet {:?}", packet.packet_type);
         match packet.packet_type {
             PacketType::PacketInit => {
                 let msg = packet_to_message::<PacketInit>(&packet).unwrap();
@@ -188,7 +187,7 @@ impl Connection {
                 return;
             }
             _ => {
-                println!("Received unhandled packet type: {:?}", packet.packet_type);
+                error!("Received unhandled packet type: {:?}", packet.packet_type);
             }
         }
     }

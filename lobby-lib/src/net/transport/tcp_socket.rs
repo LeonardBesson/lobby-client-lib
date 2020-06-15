@@ -1,15 +1,13 @@
-use std::collections::VecDeque;
-use std::io;
-use std::net::Shutdown;
-
-use mio::net::TcpStream;
-use mio::{Interest, Registry, Token};
-
 use crate::net::packet::Packet;
 use crate::net::packet_decoder::PacketDecoder;
 use crate::net::packet_encoder::PacketEncoder;
 use crate::utils::buffer_processor::{BufferProcessor, Direction};
 use crate::utils::byte_buffer::ByteBuffer;
+use mio::net::TcpStream;
+use mio::{Interest, Registry, Token};
+use std::collections::VecDeque;
+use std::io;
+use std::net::Shutdown;
 
 pub struct TcpSocket {
     pub stream: TcpStream,

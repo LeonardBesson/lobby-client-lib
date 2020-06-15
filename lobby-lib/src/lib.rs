@@ -1,15 +1,14 @@
 #[macro_use]
 extern crate lazy_static;
-
-use std::net::SocketAddr;
-use std::time::Duration;
-
 use crate::net::connection::{ConnState, Connection};
 use crate::net::connection_manager::ConnectionManager;
 use crate::net::packet::{message_to_packet, Packet};
 use crate::net::packets::*;
 use crate::net::Message;
+use log::error;
 use std::collections::VecDeque;
+use std::net::SocketAddr;
+use std::time::Duration;
 
 pub const PROTOCOL_VERSION: u16 = 1;
 pub const APP_VERSION: u16 = 1;
@@ -77,11 +76,11 @@ impl LobbyClient {
 
     pub fn authenticate(&mut self, username: String, password: String) {
         if !self.initialized() {
-            println!("authenticate() called before initialized");
+            error!("authenticate() called before initialized");
             return;
         }
         if self.closed() {
-            println!("authenticate() called when closed");
+            error!("authenticate() called when closed");
             return;
         }
         self.send_to_lobby(AuthenticationRequest { username, password });
@@ -112,7 +111,7 @@ impl LobbyClient {
                 self.send_packet(peer, packet);
             }
             Err(err) => {
-                println!("Could not convert message {:?} to packet", packet_type);
+                error!("Could not convert message {:?} to packet", packet_type);
                 return;
             }
         }

@@ -1,9 +1,7 @@
+use crate::net::Message;
+use bytes::Bytes;
 use std::borrow::Borrow;
 use std::ops::Deref;
-
-use bytes::Bytes;
-
-use crate::net::Message;
 
 pub struct ByteBuffer(Bytes);
 

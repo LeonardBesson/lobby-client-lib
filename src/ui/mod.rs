@@ -1,17 +1,15 @@
-use std::collections::HashMap;
-use std::marker::PhantomData;
-use std::time::Instant;
-
-use imgui::*;
-use imgui_winit_support::WinitPlatform;
-use winit::window::Window;
-
 use crate::application::Action;
 use crate::renderer::Renderer;
 use crate::time::Time;
 use crate::ui::screens::Screen;
 use crossbeam_channel::Sender;
+use imgui::*;
+use imgui_winit_support::WinitPlatform;
 use lobby_lib::LobbyEvent;
+use std::collections::HashMap;
+use std::marker::PhantomData;
+use std::time::Instant;
+use winit::window::Window;
 
 pub mod screens;
 

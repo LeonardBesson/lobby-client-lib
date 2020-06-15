@@ -1,11 +1,10 @@
-use std::collections::VecDeque;
-use std::io::Write;
-
-use byteorder::{BigEndian, WriteBytesExt};
-
 use crate::net::packet::{Packet, PacketFlag};
 use crate::net::packets;
 use crate::utils::byte_buffer::ByteBuffer;
+use byteorder::{BigEndian, WriteBytesExt};
+use log::debug;
+use std::collections::VecDeque;
+use std::io::Write;
 
 const MAX_PACKET_HEADER_SIZE: usize = 6;
 
@@ -89,7 +88,7 @@ impl PacketEncoder {
         }
 
         if packet_count > 0 {
-            println!(
+            debug!(
                 "Packed {} packet(s) into buffer ({} bytes)",
                 packet_count,
                 result.len()

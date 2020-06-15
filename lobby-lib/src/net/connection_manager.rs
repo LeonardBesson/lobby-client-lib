@@ -1,12 +1,3 @@
-use std::collections::{HashMap, HashSet, VecDeque};
-use std::io::{Error, Read, Write};
-use std::net::{Shutdown, SocketAddr};
-use std::time::{Duration, Instant};
-use std::{io, mem};
-
-use bytes::{Bytes, BytesMut};
-use mio::net::TcpStream;
-
 use crate::net::connection::{ConnState, Connection};
 use crate::net::packet::{packet_to_message, Packet};
 use crate::net::socket_poller::SocketPoller;
@@ -15,6 +6,14 @@ use crate::net::SocketEvent;
 use crate::utils::buffer_processor::LogBufferProcessor;
 use crate::utils::byte_buffer::ByteBuffer;
 use crate::LobbyEvent;
+use bytes::{Bytes, BytesMut};
+use log::{error, info};
+use mio::net::TcpStream;
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::io::{Error, Read, Write};
+use std::net::{Shutdown, SocketAddr};
+use std::time::{Duration, Instant};
+use std::{io, mem};
 
 pub struct ConnectionManager {
     poller: SocketPoller,
@@ -40,7 +39,7 @@ impl ConnectionManager {
     /// Init a connection to the given address
     pub fn connect(&mut self, addr: SocketAddr) {
         if let Err(err) = self.new_connection(addr) {
-            println!("Could not create new connection: {:?}", err);
+            error!("Could not create new connection: {:?}", err);
         }
     }
 
@@ -64,11 +63,11 @@ impl ConnectionManager {
             self.connections[token.0].send(packet);
             *token
         } else {
-            println!("No connection to {} yet, initiating.", peer);
+            info!("No connection to {} yet, initiating.", peer);
             let mut conn = match self.new_connection(peer) {
                 Ok(s) => s,
                 Err(err) => {
-                    println!("Could not create new connection: {:?}", err);
+                    error!("Could not create new connection: {:?}", err);
                     return;
                 }
             };
@@ -130,12 +129,12 @@ impl ConnectionManager {
             match err.kind() {
                 io::ErrorKind::WouldBlock => {}
                 kind if Self::should_close(kind) => {
-                    println!("Closing connection due to {:?}", err);
+                    error!("Closing connection due to {:?}", err);
                     self.close_connection(token);
                     return;
                 }
                 _ => {
-                    println!("Unhandled read error {:?}", err);
+                    error!("Unhandled read error {:?}", err);
                 }
             }
         }
@@ -148,12 +147,12 @@ impl ConnectionManager {
                 match err.kind() {
                     io::ErrorKind::WouldBlock => {}
                     kind if Self::should_close(kind) => {
-                        println!("Closing connection due to {:?}", err);
+                        error!("Closing connection due to {:?}", err);
                         self.close_connection(token);
                         return;
                     }
                     _ => {
-                        println!("Unhandled write error {:?}", err);
+                        error!("Unhandled write error {:?}", err);
                     }
                 }
             }

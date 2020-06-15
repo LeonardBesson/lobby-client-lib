@@ -1,10 +1,9 @@
-use winit::event::WindowEvent;
-use winit::window::Window;
-
 use crate::application::Application;
 use crate::time::Time;
 use crate::ui::Ui;
 use lobby_lib::LobbyEvent;
+use winit::event::WindowEvent;
+use winit::window::Window;
 
 pub struct Renderer {
     surface: wgpu::Surface,

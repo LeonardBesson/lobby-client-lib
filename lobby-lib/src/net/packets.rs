@@ -1,7 +1,7 @@
+use crate::net::packet::PacketInfo;
+use log::info;
 use num_derive::FromPrimitive;
 use serde::{Deserialize, Serialize};
-
-use crate::net::packet::PacketInfo;
 
 const MAX_PACKET_TYPES: usize = 500;
 
@@ -84,7 +84,7 @@ fn init_packets(types: &mut [Option<PacketInfo>; packet_count()]) {
 }
 
 pub fn init() {
-    println!(
+    info!(
         "Initialized {} packet types",
         PACKET_INFOS.iter().filter(|info| info.is_some()).count()
     );

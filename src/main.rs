@@ -8,6 +8,8 @@ mod time;
 mod ui;
 
 fn main() {
+    env_logger::init();
+
     let mut app = Application::new();
     block_on(app.run());
 }

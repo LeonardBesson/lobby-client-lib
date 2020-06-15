@@ -1,16 +1,3 @@
-use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet, VecDeque};
-use std::io::{Read, Write};
-use std::net::{Shutdown, SocketAddr};
-use std::ops::Range;
-use std::time::{Duration, Instant};
-use std::{io, mem};
-
-use bytes::Bytes;
-use mio::net::TcpStream;
-use mio::{Interest, Registry, Token};
-use serde::{Deserialize, Serialize};
-
 use crate::net::connection_manager::ConnectionManager;
 use crate::net::packet::{message_to_packet, Packet, PacketInfo};
 use crate::net::packet_encoder::PacketEncoder;
@@ -18,6 +5,17 @@ use crate::net::packets::{PacketInit, PacketType};
 use crate::net::transport::tcp_socket::TcpSocket;
 use crate::utils::byte_buffer::ByteBuffer;
 use crate::LobbyEvent;
+use bytes::Bytes;
+use mio::net::TcpStream;
+use mio::{Interest, Registry, Token};
+use serde::{Deserialize, Serialize};
+use std::collections::hash_map::Entry;
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::io::{Read, Write};
+use std::net::{Shutdown, SocketAddr};
+use std::ops::Range;
+use std::time::{Duration, Instant};
+use std::{io, mem};
 
 pub mod connection;
 pub mod connection_manager;

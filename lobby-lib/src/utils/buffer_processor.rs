@@ -1,4 +1,5 @@
 use crate::utils::byte_buffer::ByteBuffer;
+use log::info;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Direction {
@@ -16,10 +17,10 @@ impl BufferProcessor for LogBufferProcessor {
     fn process_buffer(&mut self, buffer: &mut ByteBuffer, direction: Direction) {
         match direction {
             Direction::In => {
-                println!("Processing received buffer {:?}", &buffer[..]);
+                info!("Processing received buffer {:?}", &buffer[..]);
             }
             Direction::Out => {
-                println!("Processing sent buffer {:?}", &buffer[..]);
+                info!("Processing sent buffer {:?}", &buffer[..]);
             }
         }
     }

@@ -1,3 +1,4 @@
+use log::debug;
 use std::collections::{HashMap, VecDeque};
 use std::time::{Duration, Instant};
 
@@ -132,11 +133,11 @@ impl TimerManager {
                 match timer.trigger() {
                     TimerResult::Continue => {}
                     TimerResult::Pause => {
-                        println!("Timer {} paused.", handle);
+                        debug!("Timer {} paused.", handle);
                         to_pause.push(handle);
                     }
                     TimerResult::Exhausted => {
-                        println!("Timer {} exhausted, removing.", handle);
+                        debug!("Timer {} exhausted, removing.", handle);
                         to_remove.push(handle);
                     }
                 }

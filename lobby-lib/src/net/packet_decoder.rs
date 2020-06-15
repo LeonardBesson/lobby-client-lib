@@ -1,15 +1,14 @@
-use std::collections::VecDeque;
-use std::io::Write;
-
-use byteorder::{BigEndian, ByteOrder, ReadBytesExt, WriteBytesExt};
-use bytes::buf::BufExt;
-use bytes::{Buf, BufMut, BytesMut};
-use num_traits::FromPrimitive;
-
 use crate::net::packet::{Packet, PacketFlag};
 use crate::net::packets;
 use crate::net::packets::PacketType;
 use crate::utils::byte_buffer::ByteBuffer;
+use byteorder::{BigEndian, ByteOrder, ReadBytesExt, WriteBytesExt};
+use bytes::buf::BufExt;
+use bytes::{Buf, BufMut, BytesMut};
+use log::debug;
+use num_traits::FromPrimitive;
+use std::collections::VecDeque;
+use std::io::Write;
 
 pub struct PacketDecoder {
     stream: BytesMut,
@@ -94,7 +93,7 @@ impl PacketDecoder {
         let header = self.stream.split_to(header_size);
         let data = self.stream.split_to(data_size);
 
-        println!(
+        debug!(
             "Decoded new packet. Header: {:?} (Flags: {}, Type: {:?}, Data Size: {}) Data: {:?}",
             header, flags, packet_type, data_size, data
         );

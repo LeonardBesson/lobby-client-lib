@@ -1,12 +1,10 @@
-use std::collections::HashMap;
-use std::io;
-use std::time::Duration;
-
-use mio::Interest;
-
 use crate::net::connection::Connection;
 use crate::net::transport::tcp_socket::TcpSocket;
 use crate::net::SocketEvent;
+use mio::Interest;
+use std::collections::HashMap;
+use std::io;
+use std::time::Duration;
 
 pub struct SocketPoller {
     poll: mio::Poll,
