@@ -54,8 +54,20 @@ declare_packets! {
         app_version: u16,
     }
     AuthenticationRequest {
-        username: String,
+        email: String,
         password: String,
+    }
+    AuthenticationResponse {
+        error_code: Option<String>,
+        session_token: Option<String>,
+    }
+    PacketPing {
+        id: String,
+        peer_time: u64,
+    }
+    PacketPong {
+        id: String,
+        peer_time: u64,
     }
 }
 
@@ -73,6 +85,9 @@ pub enum PacketType {
     FatalError = 0,
     PacketInit = 1,
     AuthenticationRequest = 2,
+    AuthenticationResponse = 3,
+    PacketPing = 4,
+    PacketPong = 5,
 
     Last,
 }
@@ -81,6 +96,9 @@ fn init_packets(types: &mut [Option<PacketInfo>; packet_count()]) {
     FatalError::register(types);
     PacketInit::register(types);
     AuthenticationRequest::register(types);
+    AuthenticationResponse::register(types);
+    PacketPing::register(types);
+    PacketPong::register(types);
 }
 
 pub fn init() {

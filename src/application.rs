@@ -4,7 +4,7 @@ use crate::ui::screens::events_screen::EventScreen;
 use crate::ui::screens::login_screen::LoginScreen;
 use crate::ui::screens::root_screen::RootScreen;
 use crate::ui::Ui;
-use crossbeam_channel::{unbounded, Receiver};
+use crossbeam_channel::{unbounded, Receiver, Sender};
 use lobby_lib::net::packets;
 use lobby_lib::net::packets::*;
 use lobby_lib::{net, LobbyClient, LobbyEvent};
@@ -25,7 +25,13 @@ pub enum State {
 
 pub enum Action {
     Exit,
-    Login { username: String, password: String },
+    Login { email: String, password: String },
+}
+
+// Wrapper struct to reduce boiler plate
+pub struct Lobby {
+    pub client: LobbyClient,
+    pub events: Vec<LobbyEvent>,
 }
 
 pub struct Application {
@@ -34,8 +40,7 @@ pub struct Application {
     pub max_fps: u32,
     pub frame_limit: FrameLimit,
     pub ui: Ui,
-    pub lobby_client: LobbyClient,
-    pub lobby_events: Vec<LobbyEvent>,
+    pub lobby: Lobby,
     pub action_receiver: Receiver<Action>,
 }
 
@@ -58,15 +63,17 @@ impl Application {
                 max_fps,
             ),
             ui: Ui::new(action_sender),
-            lobby_client,
-            lobby_events: Vec::with_capacity(256),
+            lobby: Lobby {
+                client: lobby_client,
+                events: Vec::with_capacity(256),
+            },
             action_receiver,
         }
     }
 
     fn initialize(&mut self, window: &Window, renderer: &mut Renderer) {
         packets::init();
-        self.lobby_client.connect();
+        self.lobby.client.connect();
         self.ui.init(window, renderer);
         self.ui.add_screen(Box::new(RootScreen));
         self.ui.add_screen(Box::new(EventScreen::new()));
@@ -83,8 +90,8 @@ impl Application {
         } else {
             self.time.next_wanted_tick - now
         };
-        self.lobby_client.tick(timeout);
-        self.lobby_client.poll_events(&mut self.lobby_events);
+        self.lobby.client.tick(timeout);
+        self.lobby.client.poll_events(&mut self.lobby.events);
 
         self.frame_limit.run();
 
@@ -113,8 +120,8 @@ impl Application {
     fn update(&mut self, renderer: &mut Renderer, window: &Window) {
         while let Ok(action) = self.action_receiver.try_recv() {
             match action {
-                Action::Login { username, password } => {
-                    self.lobby_client.authenticate(username, password);
+                Action::Login { email, password } => {
+                    self.lobby.client.authenticate(email, password);
                 }
                 Action::Exit => {
                     self.state = State::Shutdown;
@@ -125,11 +132,11 @@ impl Application {
     }
 
     fn render(&mut self, renderer: &mut Renderer, window: &Window) {
-        renderer.render(&mut self.ui, &self.lobby_events, window, &self.time);
+        renderer.render(&mut self.ui, &self.lobby.events, window, &self.time);
     }
 
     fn shutdown(&mut self) {
-        self.lobby_client.disconnect(true);
+        self.lobby.client.disconnect(true);
     }
 
     pub async fn run(mut self) {

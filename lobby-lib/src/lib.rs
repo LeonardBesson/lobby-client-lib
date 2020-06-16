@@ -8,6 +8,7 @@ use crate::net::Message;
 use log::error;
 use std::collections::VecDeque;
 use std::net::SocketAddr;
+use std::str::FromStr;
 use std::time::Duration;
 
 pub const PROTOCOL_VERSION: u16 = 1;
@@ -16,10 +17,29 @@ pub const APP_VERSION: u16 = 1;
 pub mod net;
 pub mod utils;
 
+#[derive(Debug, Copy, Clone)]
+pub enum ErrorCode {
+    InvalidCredentials,
+}
+
+impl FromStr for ErrorCode {
+    type Err = Error;
+
+    fn from_str(input: &str) -> Result<Self> {
+        match input {
+            "invalid_credentials" => Ok(ErrorCode::InvalidCredentials),
+            _ => Err(ErrorKind::InvalidArg(format!("Unknown error code: {}", input)).into()),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum LobbyEvent {
-    Connected,
+    ConnectionEstablished,
     Disconnected { message: String },
+
+    AuthSuccess { session_token: String },
+    AuthFailure { error_code: ErrorCode },
 }
 
 pub type Result<T> = ::std::result::Result<T, Error>;
@@ -74,7 +94,7 @@ impl LobbyClient {
         }
     }
 
-    pub fn authenticate(&mut self, username: String, password: String) {
+    pub fn authenticate(&mut self, email: String, password: String) {
         if !self.initialized() {
             error!("authenticate() called before initialized");
             return;
@@ -83,7 +103,7 @@ impl LobbyClient {
             error!("authenticate() called when closed");
             return;
         }
-        self.send_to_lobby(AuthenticationRequest { username, password });
+        self.send_to_lobby(AuthenticationRequest { email, password });
     }
 
     fn send_to_lobby<'de, T: Message<'de>>(&mut self, message: T) {

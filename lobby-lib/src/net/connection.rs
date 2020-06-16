@@ -4,12 +4,15 @@ use crate::net::packet_encoder::PacketEncoder;
 use crate::net::packets::*;
 use crate::net::transport::tcp_socket::TcpSocket;
 use crate::utils::buffer_processor::BufferProcessor;
-use crate::{net, LobbyEvent};
+use crate::utils::time;
+use crate::{net, ErrorCode, LobbyEvent};
 use bytes::Bytes;
 use log::{debug, error};
 use mio::net::TcpStream;
 use std::io::{Read, Write};
 use std::net::{Shutdown, SocketAddr};
+use std::str::FromStr;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::{io, mem};
 
 #[derive(Debug, Copy, Clone, PartialOrd, PartialEq)]
@@ -180,11 +183,39 @@ impl Connection {
                     return;
                 }
                 self.state = ConnState::Authenticating;
+                self.events.push(LobbyEvent::ConnectionEstablished);
             }
             PacketType::FatalError => {
                 let msg = packet_to_message::<FatalError>(&packet).unwrap();
                 self.disconnect(&msg.message);
                 return;
+            }
+            PacketType::PacketPing => {
+                let msg = packet_to_message::<PacketPing>(&packet).unwrap();
+                self.send(
+                    message_to_packet(&PacketPong {
+                        id: msg.id,
+                        peer_time: time::unix_millis(),
+                    })
+                    .unwrap(),
+                );
+                self.flush();
+            }
+            PacketType::AuthenticationResponse => {
+                let msg = packet_to_message::<AuthenticationResponse>(&packet).unwrap();
+                match msg {
+                    AuthenticationResponse {
+                        error_code: Some(err),
+                        session_token: None,
+                    } => self.events.push(LobbyEvent::AuthFailure {
+                        error_code: ErrorCode::from_str(&err).expect("unknown error code"),
+                    }),
+                    AuthenticationResponse {
+                        error_code: None,
+                        session_token: Some(session_token),
+                    } => self.events.push(LobbyEvent::AuthSuccess { session_token }),
+                    _ => self.disconnect("Protocol error"),
+                }
             }
             _ => {
                 error!("Received unhandled packet type: {:?}", packet.packet_type);

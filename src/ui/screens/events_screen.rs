@@ -38,7 +38,7 @@ impl Screen for EventScreen {
         self.update_history(events);
         let window = imgui::Window::new(im_str!("Events"));
         window
-            .size([200.0, 400.0], Condition::FirstUseEver)
+            .size([400.0, 435.0], Condition::FirstUseEver)
             .position([5.0, 5.0], Condition::FirstUseEver)
             .build(&ui, || {
                 for event in &self.event_history {

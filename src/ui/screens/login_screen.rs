@@ -5,14 +5,16 @@ use imgui::{im_str, Condition, ImString};
 use lobby_lib::LobbyEvent;
 
 pub struct LoginScreen {
-    username: ImString,
+    email: ImString,
     password: ImString,
 }
 
 impl LoginScreen {
     pub fn new() -> Self {
+        let mut email = ImString::with_capacity(64);
+        email.push_str("dev@lobby.com");
         Self {
-            username: ImString::with_capacity(64),
+            email,
             password: ImString::with_capacity(128),
         }
     }
@@ -35,14 +37,13 @@ impl Screen for LoginScreen {
             .collapsible(false)
             .position(
                 [
-                    size.width as f32 / 2.0 - window_size[0] / 2.0,
+                    size.width as f32 / 2.0 - window_size[0] / 2.0 + 30.0,
                     size.height as f32 / 2.0 - window_size[1] / 2.0,
                 ],
                 Condition::Always,
             )
             .build(&ui, || {
-                ui.input_text(im_str!("Username"), &mut self.username)
-                    .build();
+                ui.input_text(im_str!("Email"), &mut self.email).build();
                 ui.input_text(im_str!("Password"), &mut self.password)
                     .password(true)
                     .build();
@@ -50,7 +51,7 @@ impl Screen for LoginScreen {
                 ui.spacing();
                 if ui.button(im_str!("Login"), [50.0, 20.0]) {
                     action_sender.send(Action::Login {
-                        username: self.username.to_string(),
+                        email: self.email.to_string(),
                         password: self.password.to_string(),
                     });
                 }
