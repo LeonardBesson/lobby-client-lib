@@ -1,4 +1,5 @@
 use crate::net::packet::PacketInfo;
+use crate::net::structs::*;
 use log::info;
 use num_derive::FromPrimitive;
 use serde::{Deserialize, Serialize};
@@ -60,6 +61,7 @@ declare_packets! {
     AuthenticationResponse {
         error_code: Option<String>,
         session_token: Option<String>,
+        user_profile: Option<UserProfile>,
     }
     PacketPing {
         id: String,

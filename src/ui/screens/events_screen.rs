@@ -42,7 +42,7 @@ impl Screen for EventScreen {
             .position([5.0, 5.0], Condition::FirstUseEver)
             .build(&ui, || {
                 for event in &self.event_history {
-                    ui.text(format!("{:?}", event));
+                    ui.text(format!("{:#?}", event));
                 }
             });
     }

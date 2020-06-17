@@ -4,6 +4,7 @@ use crate::net::connection::{ConnState, Connection};
 use crate::net::connection_manager::ConnectionManager;
 use crate::net::packet::{message_to_packet, Packet};
 use crate::net::packets::*;
+use crate::net::structs::UserProfile;
 use crate::net::Message;
 use log::error;
 use std::collections::VecDeque;
@@ -36,10 +37,16 @@ impl FromStr for ErrorCode {
 #[derive(Debug, Clone)]
 pub enum LobbyEvent {
     ConnectionEstablished,
-    Disconnected { message: String },
-
-    AuthSuccess { session_token: String },
-    AuthFailure { error_code: ErrorCode },
+    Disconnected {
+        message: String,
+    },
+    AuthSuccess {
+        session_token: String,
+        user_profile: UserProfile,
+    },
+    AuthFailure {
+        error_code: ErrorCode,
+    },
 }
 
 pub type Result<T> = ::std::result::Result<T, Error>;

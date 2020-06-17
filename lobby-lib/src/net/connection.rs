@@ -207,13 +207,18 @@ impl Connection {
                     AuthenticationResponse {
                         error_code: Some(err),
                         session_token: None,
+                        user_profile: None,
                     } => self.events.push(LobbyEvent::AuthFailure {
                         error_code: ErrorCode::from_str(&err).expect("unknown error code"),
                     }),
                     AuthenticationResponse {
                         error_code: None,
                         session_token: Some(session_token),
-                    } => self.events.push(LobbyEvent::AuthSuccess { session_token }),
+                        user_profile: Some(user_profile),
+                    } => self.events.push(LobbyEvent::AuthSuccess {
+                        session_token,
+                        user_profile,
+                    }),
                     _ => self.disconnect("Protocol error"),
                 }
             }

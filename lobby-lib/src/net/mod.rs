@@ -24,6 +24,7 @@ pub mod packet_decoder;
 pub mod packet_encoder;
 pub mod packets;
 pub mod socket_poller;
+pub mod structs;
 pub mod transport;
 
 pub type Result<T> = ::std::result::Result<T, Error>;
