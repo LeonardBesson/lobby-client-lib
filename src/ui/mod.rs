@@ -1,7 +1,7 @@
 use crate::application::Action;
 use crate::renderer::Renderer;
 use crate::time::Time;
-use crate::ui::screens::Screen;
+use crate::ui::screens::{Screen, ScreenToken};
 use crossbeam_channel::Sender;
 use imgui::*;
 use imgui_winit_support::WinitPlatform;
@@ -19,7 +19,8 @@ pub struct Ui {
     renderer: Option<imgui_wgpu::Renderer>,
     mouse_cursor: Option<MouseCursor>,
     action_sender: Sender<Action>,
-    screens: Vec<Box<dyn Screen>>,
+    screen_indexes: HashMap<String, usize>,
+    screens: Vec<Option<Box<dyn Screen>>>,
 }
 
 impl Ui {
@@ -32,6 +33,7 @@ impl Ui {
             renderer: None,
             mouse_cursor: None,
             action_sender,
+            screen_indexes: HashMap::new(),
             screens: Vec::new(),
         }
     }
@@ -78,8 +80,47 @@ impl Ui {
             .handle_event(self.imgui.io_mut(), window, event);
     }
 
-    pub fn add_screen(&mut self, screen: Box<dyn Screen>) {
-        self.screens.push(screen);
+    pub fn push_screen(&mut self, token: ScreenToken, screen: Box<dyn Screen>) -> usize {
+        let z_order = self.screens.len();
+        self.insert_screen(token, z_order, screen)
+    }
+
+    pub fn insert_screen(
+        &mut self,
+        token: ScreenToken,
+        z_order: usize,
+        screen: Box<dyn Screen>,
+    ) -> usize {
+        if z_order > self.screens.len() {
+            self.screens.resize_with(z_order, || None);
+        }
+        self.screen_indexes.insert(token.to_owned(), z_order);
+        self.screens.insert(z_order, Some(screen));
+        z_order
+    }
+
+    pub fn remove_screen(&mut self, token: ScreenToken) -> Option<Box<dyn Screen>> {
+        let token = token.to_owned();
+        if let Some(z_order) = self.screen_indexes.get(&token).copied() {
+            self.screen_indexes.remove(&token);
+            return self.screens.remove(z_order);
+        }
+        None
+    }
+
+    pub fn replace_screen(
+        &mut self,
+        old_token: ScreenToken,
+        new_token: ScreenToken,
+        new_screen: Box<dyn Screen>,
+    ) -> Option<Box<dyn Screen>> {
+        if let Some(z_order) = self.screen_indexes.get(&old_token.to_owned()).copied() {
+            self.screen_indexes.insert(new_token.to_owned(), z_order);
+            let old_screen = self.screens.remove(z_order);
+            self.screens.insert(z_order, Some(new_screen));
+            return old_screen;
+        }
+        None
     }
 
     pub fn draw(
@@ -99,7 +140,9 @@ impl Ui {
         let ui = self.imgui.frame();
 
         for screen in self.screens.iter_mut() {
-            screen.draw(&ui, window.inner_size(), events, &self.action_sender);
+            if let Some(screen) = screen {
+                screen.draw(&ui, window.inner_size(), events, &self.action_sender);
+            }
         }
 
         if self.mouse_cursor != ui.mouse_cursor() {

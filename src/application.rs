@@ -1,8 +1,10 @@
 use crate::renderer::Renderer;
 use crate::time::{FrameLimit, FrameLimitStrategy, Time};
 use crate::ui::screens::events_screen::EventScreen;
+use crate::ui::screens::home_screen::HomeScreen;
 use crate::ui::screens::login_screen::LoginScreen;
 use crate::ui::screens::root_screen::RootScreen;
+use crate::ui::screens::ScreenToken;
 use crate::ui::Ui;
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use lobby_lib::net::packets;
@@ -75,9 +77,11 @@ impl Application {
         packets::init();
         self.lobby.client.connect();
         self.ui.init(window, renderer);
-        self.ui.add_screen(Box::new(RootScreen));
-        self.ui.add_screen(Box::new(EventScreen::new()));
-        self.ui.add_screen(Box::new(LoginScreen::new()));
+        self.ui.push_screen("RootScreen", Box::new(RootScreen));
+        self.ui
+            .push_screen("EventScreen", Box::new(EventScreen::new()));
+        self.ui
+            .push_screen("LoginScreen", Box::new(LoginScreen::new()));
     }
 
     fn tick(&mut self, renderer: &mut Renderer, window: &Window) {
@@ -126,6 +130,15 @@ impl Application {
                 Action::Exit => {
                     self.state = State::Shutdown;
                 }
+            }
+        }
+        for event in &self.lobby.events {
+            match event {
+                LobbyEvent::AuthSuccess { .. } => {
+                    self.ui
+                        .replace_screen("LoginScreen", "HomeScreen", Box::new(HomeScreen));
+                }
+                _ => {}
             }
         }
         renderer.update(self.time.delta);
