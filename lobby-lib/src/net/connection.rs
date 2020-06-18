@@ -12,7 +12,7 @@ use mio::net::TcpStream;
 use std::io::{Read, Write};
 use std::net::{Shutdown, SocketAddr};
 use std::str::FromStr;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use std::{io, mem};
 
 #[derive(Debug, Copy, Clone, PartialOrd, PartialEq)]
@@ -38,6 +38,7 @@ pub struct Connection {
     pub token: mio::Token,
     pub peer_info: PeerInfo,
     pub state: ConnState,
+    pub closed_time: Option<Instant>,
 
     pub socket: TcpSocket,
     pub tcp_encoder: PacketEncoder,
@@ -55,6 +56,7 @@ impl Connection {
             token,
             peer_info: PeerInfo::new(addr),
             state: ConnState::Initializing,
+            closed_time: None,
             socket,
             tcp_encoder: PacketEncoder::new(8 * 1024),
             tcp_decoder: PacketDecoder::new(),
@@ -116,6 +118,7 @@ impl Connection {
     pub fn close(&mut self) {
         self.socket.close();
         self.state = ConnState::Closed;
+        self.closed_time = Some(Instant::now());
     }
 
     /// Read as much as possible from the connection's socket.

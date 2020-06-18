@@ -79,7 +79,9 @@ impl ConnectionManager {
 
     fn new_connection(&mut self, addr: SocketAddr) -> io::Result<&mut Connection> {
         if let Some(token) = self.tokens.get(&addr) {
-            let new_conn = Connection::open(addr, *token)?;
+            let mut new_conn = Connection::open(addr, *token)?;
+            new_conn.add_buffer_processor(Box::new(LogBufferProcessor));
+            self.poller.register_connection(&mut new_conn)?;
             mem::replace(&mut self.connections[token.0], new_conn);
             Ok(&mut self.connections[token.0])
         } else {

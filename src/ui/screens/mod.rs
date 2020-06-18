@@ -16,5 +16,3 @@ pub trait Screen {
         action_sender: &Sender<Action>,
     );
 }
-
-pub type ScreenToken<'a> = &'a str;

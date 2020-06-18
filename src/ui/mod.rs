@@ -1,7 +1,7 @@
 use crate::application::Action;
 use crate::renderer::Renderer;
 use crate::time::Time;
-use crate::ui::screens::{Screen, ScreenToken};
+use crate::ui::screens::Screen;
 use crossbeam_channel::Sender;
 use imgui::*;
 use imgui_winit_support::WinitPlatform;
@@ -19,7 +19,7 @@ pub struct Ui {
     renderer: Option<imgui_wgpu::Renderer>,
     mouse_cursor: Option<MouseCursor>,
     action_sender: Sender<Action>,
-    screen_indexes: HashMap<String, usize>,
+    screens_order: HashMap<String, usize>,
     screens: Vec<Option<Box<dyn Screen>>>,
 }
 
@@ -33,7 +33,7 @@ impl Ui {
             renderer: None,
             mouse_cursor: None,
             action_sender,
-            screen_indexes: HashMap::new(),
+            screens_order: HashMap::new(),
             screens: Vec::new(),
         }
     }
@@ -80,42 +80,42 @@ impl Ui {
             .handle_event(self.imgui.io_mut(), window, event);
     }
 
-    pub fn push_screen(&mut self, token: ScreenToken, screen: Box<dyn Screen>) -> usize {
+    pub fn push_screen<T: Into<String>>(&mut self, token: T, screen: Box<dyn Screen>) -> usize {
         let z_order = self.screens.len();
         self.insert_screen(token, z_order, screen)
     }
 
-    pub fn insert_screen(
+    pub fn insert_screen<T: Into<String>>(
         &mut self,
-        token: ScreenToken,
+        token: T,
         z_order: usize,
         screen: Box<dyn Screen>,
     ) -> usize {
         if z_order > self.screens.len() {
             self.screens.resize_with(z_order, || None);
         }
-        self.screen_indexes.insert(token.to_owned(), z_order);
+        self.screens_order.insert(token.into(), z_order);
         self.screens.insert(z_order, Some(screen));
         z_order
     }
 
-    pub fn remove_screen(&mut self, token: ScreenToken) -> Option<Box<dyn Screen>> {
-        let token = token.to_owned();
-        if let Some(z_order) = self.screen_indexes.get(&token).copied() {
-            self.screen_indexes.remove(&token);
+    pub fn remove_screen<T: Into<String>>(&mut self, token: T) -> Option<Box<dyn Screen>> {
+        let token = token.into();
+        if let Some(z_order) = self.screens_order.get(&token).copied() {
+            self.screens_order.remove(&token);
             return self.screens.remove(z_order);
         }
         None
     }
 
-    pub fn replace_screen(
+    pub fn replace_screen<T: Into<String>>(
         &mut self,
-        old_token: ScreenToken,
-        new_token: ScreenToken,
+        old_token: T,
+        new_token: T,
         new_screen: Box<dyn Screen>,
     ) -> Option<Box<dyn Screen>> {
-        if let Some(z_order) = self.screen_indexes.get(&old_token.to_owned()).copied() {
-            self.screen_indexes.insert(new_token.to_owned(), z_order);
+        if let Some(z_order) = self.screens_order.get(&old_token.into()).copied() {
+            self.screens_order.insert(new_token.into(), z_order);
             let old_screen = self.screens.remove(z_order);
             self.screens.insert(z_order, Some(new_screen));
             return old_screen;

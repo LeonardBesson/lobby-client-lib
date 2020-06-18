@@ -4,12 +4,11 @@ use crate::ui::screens::events_screen::EventScreen;
 use crate::ui::screens::home_screen::HomeScreen;
 use crate::ui::screens::login_screen::LoginScreen;
 use crate::ui::screens::root_screen::RootScreen;
-use crate::ui::screens::ScreenToken;
 use crate::ui::Ui;
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use lobby_lib::net::packets;
 use lobby_lib::net::packets::*;
-use lobby_lib::{net, LobbyClient, LobbyEvent};
+use lobby_lib::{net, LobbyClient, LobbyClientBuilder, LobbyEvent};
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 use winit::dpi::PhysicalSize;
@@ -48,7 +47,10 @@ pub struct Application {
 
 impl Application {
     pub fn new() -> Self {
-        let lobby_client = match LobbyClient::new("127.0.0.1:9000") {
+        let lobby_client = match LobbyClientBuilder::new("127.0.0.1:9000")
+            .with_reconnect_interval(Duration::from_secs(10))
+            .build()
+        {
             Ok(client) => client,
             Err(err) => {
                 panic!("Couldn't create lobby client:  {:?}", err);

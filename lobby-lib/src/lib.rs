@@ -6,11 +6,11 @@ use crate::net::packet::{message_to_packet, Packet};
 use crate::net::packets::*;
 use crate::net::structs::UserProfile;
 use crate::net::Message;
-use log::error;
+use log::{debug, error};
 use std::collections::VecDeque;
 use std::net::SocketAddr;
 use std::str::FromStr;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 pub const PROTOCOL_VERSION: u16 = 1;
 pub const APP_VERSION: u16 = 1;
@@ -60,22 +60,46 @@ pub enum ErrorKind {
 
 pub struct LobbyClient {
     addr: SocketAddr,
+    reconnect_interval: Option<Duration>,
+    last_reconnect_attempt: Option<Instant>,
     connection_manager: ConnectionManager,
     incoming_events: VecDeque<LobbyEvent>,
 }
 
-impl LobbyClient {
-    pub fn new(url: &str) -> Result<Self> {
-        let addr = url
+pub struct LobbyClientBuilder<'a> {
+    url: &'a str,
+    reconnect_interval: Option<Duration>,
+}
+
+impl<'a> LobbyClientBuilder<'a> {
+    pub fn new(url: &'a str) -> Self {
+        Self {
+            url,
+            reconnect_interval: None,
+        }
+    }
+
+    pub fn with_reconnect_interval(mut self, interval: Duration) -> Self {
+        self.reconnect_interval = Some(interval);
+        self
+    }
+
+    pub fn build(&self) -> Result<LobbyClient> {
+        let addr = self
+            .url
             .parse()
-            .map_err(|_| ErrorKind::InvalidArg(format!("Invalid url {}", url)))?;
-        Ok(Self {
+            .map_err(|_| ErrorKind::InvalidArg(format!("Invalid url {}", self.url)))?;
+        Ok(LobbyClient {
             addr,
+            reconnect_interval: self.reconnect_interval,
+            last_reconnect_attempt: None,
             connection_manager: ConnectionManager::new(),
             incoming_events: VecDeque::new(),
         })
     }
+}
 
+impl LobbyClient {
     pub fn connect(&mut self) {
         self.connection_manager.connect(self.addr);
     }
@@ -85,6 +109,7 @@ impl LobbyClient {
     }
 
     pub fn tick(&mut self, timeout: Duration) {
+        self.try_to_reconnect();
         self.connection_manager
             .tick(&mut self.incoming_events, timeout);
     }
@@ -96,6 +121,7 @@ impl LobbyClient {
                 break;
             }
             if let Some(event) = self.incoming_events.pop_front() {
+                self.handle_event(&event);
                 events.push(event);
             }
         }
@@ -111,6 +137,15 @@ impl LobbyClient {
             return;
         }
         self.send_to_lobby(AuthenticationRequest { email, password });
+    }
+
+    fn handle_event(&mut self, event: &LobbyEvent) {
+        match event {
+            LobbyEvent::ConnectionEstablished => {
+                self.last_reconnect_attempt = None;
+            }
+            _ => {}
+        }
     }
 
     fn send_to_lobby<'de, T: Message<'de>>(&mut self, message: T) {
@@ -146,5 +181,28 @@ impl LobbyClient {
 
     fn send_packet(&mut self, peer: SocketAddr, packet: Packet) {
         self.connection_manager.send(peer, packet);
+    }
+
+    fn try_to_reconnect(&mut self) {
+        if !self.closed() {
+            return;
+        }
+
+        if let Some(interval) = self.reconnect_interval {
+            let closed_at = self.connection_mut().closed_time;
+            match (self.last_reconnect_attempt, closed_at) {
+                (Some(attempt), _) if Instant::now() > attempt + interval => {
+                    debug!("Reconnecting");
+                    self.last_reconnect_attempt = Some(Instant::now());
+                    self.connect();
+                }
+                (None, Some(closed_at)) if Instant::now() > closed_at + interval => {
+                    debug!("Reconnecting");
+                    self.last_reconnect_attempt = Some(Instant::now());
+                    self.connect();
+                }
+                _ => {}
+            }
+        }
     }
 }
