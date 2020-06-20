@@ -9,7 +9,7 @@ const MAX_PACKET_TYPES: usize = 500;
 macro_rules! declare_packets {
     ($
         ($struct:ident {
-            $($field:ident:$type:ty),*,
+            $($field:ident:$type:ty)*
         })
     +) => {
         $(
@@ -48,28 +48,48 @@ macro_rules! declare_packets {
 
 declare_packets! {
     FatalError {
-        message: String,
+        message: String
     }
     PacketInit {
-        protocol_version: u16,
-        app_version: u16,
+        protocol_version: u16
+        app_version: u16
     }
     AuthenticationRequest {
-        email: String,
-        password: String,
+        email: String
+        password: String
     }
     AuthenticationResponse {
-        error_code: Option<String>,
-        session_token: Option<String>,
-        user_profile: Option<UserProfile>,
+        error_code: Option<String>
+        session_token: Option<String>
+        user_profile: Option<UserProfile>
     }
     PacketPing {
-        id: String,
-        peer_time: u64,
+        id: String
+        peer_time: u64
     }
     PacketPong {
-        id: String,
-        peer_time: u64,
+        id: String
+        peer_time: u64
+    }
+    AddFriendRequest {
+        user_tag: String
+    }
+    AddFriendRequestResponse {
+        user_tag: String
+        error_code: Option<String>
+    }
+    FriendRequestAction {
+        request_id: String
+        action: crate::net::structs::FriendRequestAction
+    }
+    FriendRequestActionResponse {
+        request_id: String
+        error_code: Option<String>
+    }
+    FetchPendingFriendRequests {}
+    FetchPendingFriendRequestsResponse {
+        pending_as_inviter: Vec<FriendRequest>
+        pending_as_invitee: Vec<FriendRequest>
     }
 }
 
@@ -90,6 +110,12 @@ pub enum PacketType {
     AuthenticationResponse = 3,
     PacketPing = 4,
     PacketPong = 5,
+    AddFriendRequest = 6,
+    AddFriendRequestResponse = 7,
+    FriendRequestAction = 8,
+    FriendRequestActionResponse = 9,
+    FetchPendingFriendRequests = 10,
+    FetchPendingFriendRequestsResponse = 11,
 
     Last,
 }
@@ -101,6 +127,12 @@ fn init_packets(types: &mut [Option<PacketInfo>; packet_count()]) {
     AuthenticationResponse::register(types);
     PacketPing::register(types);
     PacketPong::register(types);
+    AddFriendRequest::register(types);
+    AddFriendRequestResponse::register(types);
+    FriendRequestAction::register(types);
+    FriendRequestActionResponse::register(types);
+    FetchPendingFriendRequests::register(types);
+    FetchPendingFriendRequestsResponse::register(types);
 }
 
 pub fn init() {

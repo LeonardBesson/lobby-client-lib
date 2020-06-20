@@ -1,6 +1,7 @@
 use crate::renderer::Renderer;
 use crate::time::{FrameLimit, FrameLimitStrategy, Time};
 use crate::ui::screens::events_screen::EventScreen;
+use crate::ui::screens::friend_list_screen::FriendListScreen;
 use crate::ui::screens::home_screen::HomeScreen;
 use crate::ui::screens::login_screen::LoginScreen;
 use crate::ui::screens::root_screen::RootScreen;
@@ -27,6 +28,7 @@ pub enum State {
 pub enum Action {
     Exit,
     Login { email: String, password: String },
+    AddFriend { user_tag: String },
 }
 
 // Wrapper struct to reduce boiler plate
@@ -132,6 +134,9 @@ impl Application {
                 Action::Exit => {
                     self.state = State::Shutdown;
                 }
+                Action::AddFriend { user_tag } => {
+                    self.lobby.client.add_friend(user_tag);
+                }
             }
         }
         for event in &self.lobby.events {
@@ -139,6 +144,8 @@ impl Application {
                 LobbyEvent::AuthSuccess { .. } => {
                     self.ui
                         .replace_screen("LoginScreen", "HomeScreen", Box::new(HomeScreen));
+                    self.ui
+                        .push_screen("Friends", Box::new(FriendListScreen::new()));
                 }
                 _ => {}
             }

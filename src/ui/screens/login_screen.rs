@@ -13,10 +13,9 @@ impl LoginScreen {
     pub fn new() -> Self {
         let mut email = ImString::with_capacity(64);
         email.push_str("dev@lobby.com");
-        Self {
-            email,
-            password: ImString::with_capacity(128),
-        }
+        let mut password = ImString::with_capacity(128);
+        password.push_str("admin");
+        Self { email, password }
     }
 }
 

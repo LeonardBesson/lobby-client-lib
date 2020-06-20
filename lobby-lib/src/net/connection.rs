@@ -225,6 +225,10 @@ impl Connection {
                     _ => self.disconnect("Protocol error"),
                 }
             }
+            PacketType::FetchPendingFriendRequestsResponse => {
+                let msg = packet_to_message::<FetchPendingFriendRequestsResponse>(&packet);
+                error!("{:#?}", msg);
+            }
             _ => {
                 error!("Received unhandled packet type: {:?}", packet.packet_type);
             }

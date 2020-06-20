@@ -139,6 +139,10 @@ impl LobbyClient {
         self.send_to_lobby(AuthenticationRequest { email, password });
     }
 
+    pub fn add_friend(&mut self, user_tag: String) {
+        self.send_to_lobby(AddFriendRequest { user_tag });
+    }
+
     fn handle_event(&mut self, event: &LobbyEvent) {
         match event {
             LobbyEvent::ConnectionEstablished => {
