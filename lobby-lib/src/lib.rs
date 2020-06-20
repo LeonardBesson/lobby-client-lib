@@ -54,6 +54,7 @@ pub enum LobbyEvent {
     FriendListUpdated {
         friend_list: Vec<Friend>,
     },
+    // TODO: error events
 }
 
 pub type Result<T> = ::std::result::Result<T, Error>;
@@ -160,6 +161,10 @@ impl LobbyClient {
 
     pub fn friend_request_action(&mut self, request_id: String, action: FriendRequestActionChoice) {
         self.send_to_lobby(FriendRequestAction { request_id, action });
+    }
+
+    pub fn remove_friend(&mut self, user_tag: String) {
+        self.send_to_lobby(RemoveFriend { user_tag });
     }
 
     fn handle_event(&mut self, event: &LobbyEvent) {

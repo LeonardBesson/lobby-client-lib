@@ -149,6 +149,11 @@ impl Screen for FriendListScreen {
                         "{} ({})",
                         &friend.user_profile.display_name, &friend.user_profile.user_tag
                     ));
+                    if ui.button(im_str!("Remove"), [0.0, 0.0]) {
+                        action_sender.send(Action::RemoveFriend {
+                            user_tag: friend.user_profile.user_tag.clone(),
+                        });
+                    }
                     ui.unindent();
                     ui.separator();
                 }
@@ -163,6 +168,12 @@ impl Screen for FriendListScreen {
                         "{} ({})",
                         &friend.user_profile.display_name, &friend.user_profile.user_tag
                     ));
+                    ui.same_line(0.0);
+                    if ui.button(im_str!("Remove"), [0.0, 0.0]) {
+                        action_sender.send(Action::RemoveFriend {
+                            user_tag: friend.user_profile.user_tag.clone(),
+                        });
+                    }
                     ui.unindent();
                     ui.separator();
                 }

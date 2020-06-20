@@ -39,6 +39,9 @@ pub enum Action {
         request_id: String,
         action: FriendRequestActionChoice,
     },
+    RemoveFriend {
+        user_tag: String,
+    },
 }
 
 // Wrapper struct to reduce boiler plate
@@ -149,6 +152,9 @@ impl Application {
                 }
                 Action::FriendRequestAction { request_id, action } => {
                     self.lobby.client.friend_request_action(request_id, action);
+                }
+                Action::RemoveFriend { user_tag } => {
+                    self.lobby.client.remove_friend(user_tag);
                 }
             }
         }

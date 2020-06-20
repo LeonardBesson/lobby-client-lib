@@ -95,6 +95,12 @@ declare_packets! {
     FetchFriendListResponse {
         friend_list: Vec<Friend>
     }
+    RemoveFriend {
+        user_tag: String
+    }
+    RemoveFriendResponse {
+        error_code: Option<String>
+    }
 }
 
 lazy_static! {
@@ -122,6 +128,8 @@ pub enum PacketType {
     FetchPendingFriendRequestsResponse = 11,
     FetchFriendList = 12,
     FetchFriendListResponse = 13,
+    RemoveFriend = 14,
+    RemoveFriendResponse = 15,
 
     Last,
 }
@@ -141,6 +149,8 @@ fn init_packets(types: &mut [Option<PacketInfo>; packet_count()]) {
     FetchPendingFriendRequestsResponse::register(types);
     FetchFriendList::register(types);
     FetchFriendListResponse::register(types);
+    RemoveFriend::register(types);
+    RemoveFriendResponse::register(types);
 }
 
 pub fn init() {
