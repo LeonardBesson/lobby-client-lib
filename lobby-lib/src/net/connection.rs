@@ -232,6 +232,12 @@ impl Connection {
                     as_invitee: msg.pending_as_invitee,
                 });
             }
+            PacketType::FetchFriendListResponse => {
+                let msg = packet_to_message::<FetchFriendListResponse>(&packet).unwrap();
+                self.events.push(LobbyEvent::FriendListUpdated {
+                    friend_list: msg.friend_list,
+                });
+            }
             _ => {
                 error!("Received unhandled packet type: {:?}", packet.packet_type);
             }

@@ -51,6 +51,9 @@ pub enum LobbyEvent {
         as_invitee: Vec<FriendRequest>,
         as_inviter: Vec<FriendRequest>,
     },
+    FriendListUpdated {
+        friend_list: Vec<UserProfile>,
+    },
 }
 
 pub type Result<T> = ::std::result::Result<T, Error>;
@@ -149,6 +152,10 @@ impl LobbyClient {
 
     pub fn refresh_friend_requests(&mut self) {
         self.send_to_lobby(FetchPendingFriendRequests {});
+    }
+
+    pub fn refresh_friend_list(&mut self) {
+        self.send_to_lobby(FetchFriendList {});
     }
 
     pub fn friend_request_action(&mut self, request_id: String, action: FriendRequestActionChoice) {

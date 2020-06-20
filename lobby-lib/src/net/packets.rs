@@ -91,6 +91,10 @@ declare_packets! {
         pending_as_inviter: Vec<FriendRequest>
         pending_as_invitee: Vec<FriendRequest>
     }
+    FetchFriendList{}
+    FetchFriendListResponse {
+        friend_list: Vec<UserProfile>
+    }
 }
 
 lazy_static! {
@@ -116,6 +120,8 @@ pub enum PacketType {
     FriendRequestActionResponse = 9,
     FetchPendingFriendRequests = 10,
     FetchPendingFriendRequestsResponse = 11,
+    FetchFriendList = 12,
+    FetchFriendListResponse = 13,
 
     Last,
 }
@@ -133,6 +139,8 @@ fn init_packets(types: &mut [Option<PacketInfo>; packet_count()]) {
     FriendRequestActionResponse::register(types);
     FetchPendingFriendRequests::register(types);
     FetchPendingFriendRequestsResponse::register(types);
+    FetchFriendList::register(types);
+    FetchFriendListResponse::register(types);
 }
 
 pub fn init() {

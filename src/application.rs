@@ -161,6 +161,7 @@ impl Application {
                         .push_screen("Friends", Box::new(FriendListScreen::new()));
 
                     self.lobby.client.refresh_friend_requests();
+                    self.lobby.client.refresh_friend_list();
                 }
                 _ => {}
             }

@@ -4,7 +4,7 @@ use crossbeam_channel::Sender;
 use imgui::{im_str, Condition, ImString, StyleVar, Ui};
 
 use lobby_lib::net::packets::PacketType::FriendRequestAction;
-use lobby_lib::net::structs::{FriendRequest, FriendRequestActionChoice};
+use lobby_lib::net::structs::{FriendRequest, FriendRequestActionChoice, UserProfile};
 use lobby_lib::LobbyEvent;
 use winit::dpi::PhysicalSize;
 
@@ -12,6 +12,7 @@ pub struct FriendListScreen {
     user_tag_input: ImString,
     pending_as_inviter: Vec<FriendRequest>,
     pending_as_invitee: Vec<FriendRequest>,
+    friend_list: Vec<UserProfile>,
 }
 
 impl FriendListScreen {
@@ -20,6 +21,7 @@ impl FriendListScreen {
             user_tag_input: ImString::with_capacity(128),
             pending_as_inviter: Vec::new(),
             pending_as_invitee: Vec::new(),
+            friend_list: Vec::new(),
         }
     }
 
@@ -32,6 +34,9 @@ impl FriendListScreen {
                 } => {
                     self.pending_as_inviter = as_inviter.to_vec();
                     self.pending_as_invitee = as_invitee.to_vec();
+                }
+                LobbyEvent::FriendListUpdated { friend_list } => {
+                    self.friend_list = friend_list.to_vec();
                 }
                 _ => {}
             }
@@ -132,6 +137,17 @@ impl Screen for FriendListScreen {
                     }
                     inviter_group.end(&ui);
                 }
+
+                let friends_group = ui.begin_group();
+                ui.text("Friends:");
+                ui.separator();
+                for friend in &self.friend_list {
+                    ui.indent();
+                    ui.text(format!("{} ({})", &friend.display_name, &friend.user_tag));
+                    ui.unindent();
+                    ui.separator();
+                }
+                friends_group.end(&ui);
             });
     }
 }
