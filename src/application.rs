@@ -9,6 +9,7 @@ use crate::ui::Ui;
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use lobby_lib::net::packets;
 use lobby_lib::net::packets::*;
+use lobby_lib::net::structs::FriendRequestActionChoice;
 use lobby_lib::{net, LobbyClient, LobbyClientBuilder, LobbyEvent};
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
@@ -27,8 +28,17 @@ pub enum State {
 
 pub enum Action {
     Exit,
-    Login { email: String, password: String },
-    AddFriend { user_tag: String },
+    Login {
+        email: String,
+        password: String,
+    },
+    AddFriend {
+        user_tag: String,
+    },
+    FriendRequestAction {
+        request_id: String,
+        action: FriendRequestActionChoice,
+    },
 }
 
 // Wrapper struct to reduce boiler plate
@@ -137,6 +147,9 @@ impl Application {
                 Action::AddFriend { user_tag } => {
                     self.lobby.client.add_friend(user_tag);
                 }
+                Action::FriendRequestAction { request_id, action } => {
+                    self.lobby.client.friend_request_action(request_id, action);
+                }
             }
         }
         for event in &self.lobby.events {
@@ -146,6 +159,8 @@ impl Application {
                         .replace_screen("LoginScreen", "HomeScreen", Box::new(HomeScreen));
                     self.ui
                         .push_screen("Friends", Box::new(FriendListScreen::new()));
+
+                    self.lobby.client.refresh_friend_requests();
                 }
                 _ => {}
             }

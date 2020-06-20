@@ -80,7 +80,7 @@ declare_packets! {
     }
     FriendRequestAction {
         request_id: String
-        action: crate::net::structs::FriendRequestAction
+        action: FriendRequestActionChoice
     }
     FriendRequestActionResponse {
         request_id: String

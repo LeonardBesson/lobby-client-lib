@@ -4,7 +4,7 @@ use crate::net::connection::{ConnState, Connection};
 use crate::net::connection_manager::ConnectionManager;
 use crate::net::packet::{message_to_packet, Packet};
 use crate::net::packets::*;
-use crate::net::structs::UserProfile;
+use crate::net::structs::{FriendRequest, FriendRequestActionChoice, UserProfile};
 use crate::net::Message;
 use log::{debug, error};
 use std::collections::VecDeque;
@@ -46,6 +46,10 @@ pub enum LobbyEvent {
     },
     AuthFailure {
         error_code: ErrorCode,
+    },
+    FriendRequestsUpdated {
+        as_invitee: Vec<FriendRequest>,
+        as_inviter: Vec<FriendRequest>,
     },
 }
 
@@ -141,6 +145,14 @@ impl LobbyClient {
 
     pub fn add_friend(&mut self, user_tag: String) {
         self.send_to_lobby(AddFriendRequest { user_tag });
+    }
+
+    pub fn refresh_friend_requests(&mut self) {
+        self.send_to_lobby(FetchPendingFriendRequests {});
+    }
+
+    pub fn friend_request_action(&mut self, request_id: String, action: FriendRequestActionChoice) {
+        self.send_to_lobby(FriendRequestAction { request_id, action });
     }
 
     fn handle_event(&mut self, event: &LobbyEvent) {

@@ -226,8 +226,11 @@ impl Connection {
                 }
             }
             PacketType::FetchPendingFriendRequestsResponse => {
-                let msg = packet_to_message::<FetchPendingFriendRequestsResponse>(&packet);
-                error!("{:#?}", msg);
+                let msg = packet_to_message::<FetchPendingFriendRequestsResponse>(&packet).unwrap();
+                self.events.push(LobbyEvent::FriendRequestsUpdated {
+                    as_inviter: msg.pending_as_inviter,
+                    as_invitee: msg.pending_as_invitee,
+                });
             }
             _ => {
                 error!("Received unhandled packet type: {:?}", packet.packet_type);
