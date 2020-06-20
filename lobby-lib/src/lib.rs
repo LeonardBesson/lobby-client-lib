@@ -4,7 +4,7 @@ use crate::net::connection::{ConnState, Connection};
 use crate::net::connection_manager::ConnectionManager;
 use crate::net::packet::{message_to_packet, Packet};
 use crate::net::packets::*;
-use crate::net::structs::{FriendRequest, FriendRequestActionChoice, UserProfile};
+use crate::net::structs::{Friend, FriendRequest, FriendRequestActionChoice, UserProfile};
 use crate::net::Message;
 use log::{debug, error};
 use std::collections::VecDeque;
@@ -52,7 +52,7 @@ pub enum LobbyEvent {
         as_inviter: Vec<FriendRequest>,
     },
     FriendListUpdated {
-        friend_list: Vec<UserProfile>,
+        friend_list: Vec<Friend>,
     },
 }
 

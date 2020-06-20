@@ -93,7 +93,7 @@ declare_packets! {
     }
     FetchFriendList{}
     FetchFriendListResponse {
-        friend_list: Vec<UserProfile>
+        friend_list: Vec<Friend>
     }
 }
 

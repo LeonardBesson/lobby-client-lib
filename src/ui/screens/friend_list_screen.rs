@@ -4,7 +4,7 @@ use crossbeam_channel::Sender;
 use imgui::{im_str, Condition, ImString, StyleVar, Ui};
 
 use lobby_lib::net::packets::PacketType::FriendRequestAction;
-use lobby_lib::net::structs::{FriendRequest, FriendRequestActionChoice, UserProfile};
+use lobby_lib::net::structs::{Friend, FriendRequest, FriendRequestActionChoice, UserProfile};
 use lobby_lib::LobbyEvent;
 use winit::dpi::PhysicalSize;
 
@@ -12,7 +12,7 @@ pub struct FriendListScreen {
     user_tag_input: ImString,
     pending_as_inviter: Vec<FriendRequest>,
     pending_as_invitee: Vec<FriendRequest>,
-    friend_list: Vec<UserProfile>,
+    friend_list: Vec<Friend>,
 }
 
 impl FriendListScreen {
@@ -138,16 +138,35 @@ impl Screen for FriendListScreen {
                     inviter_group.end(&ui);
                 }
 
-                let friends_group = ui.begin_group();
-                ui.text("Friends:");
+                let (online_friends, offline_friends): (Vec<&Friend>, Vec<&Friend>) =
+                    self.friend_list.iter().partition(|f| f.is_online);
+                let online_friends_group = ui.begin_group();
+                ui.text("Online Friends:");
                 ui.separator();
-                for friend in &self.friend_list {
+                for friend in online_friends {
                     ui.indent();
-                    ui.text(format!("{} ({})", &friend.display_name, &friend.user_tag));
+                    ui.text(format!(
+                        "{} ({})",
+                        &friend.user_profile.display_name, &friend.user_profile.user_tag
+                    ));
                     ui.unindent();
                     ui.separator();
                 }
-                friends_group.end(&ui);
+                online_friends_group.end(&ui);
+
+                let offline_friends_group = ui.begin_group();
+                ui.text("Offline Friends:");
+                ui.separator();
+                for friend in offline_friends {
+                    ui.indent();
+                    ui.text(format!(
+                        "{} ({})",
+                        &friend.user_profile.display_name, &friend.user_profile.user_tag
+                    ));
+                    ui.unindent();
+                    ui.separator();
+                }
+                offline_friends_group.end(&ui);
             });
     }
 }

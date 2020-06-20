@@ -19,3 +19,9 @@ pub struct FriendRequest {
     pub state: String,
     pub user_profile: UserProfile,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Friend {
+    pub user_profile: UserProfile,
+    pub is_online: bool,
+}
