@@ -2,23 +2,38 @@ use crate::application::Action;
 use crate::ui::screens::Screen;
 use crossbeam_channel::Sender;
 use imgui::{im_str, Condition, ImString, StyleColor, Ui};
+use lobby_lib::net::structs::UserProfile;
 use lobby_lib::LobbyEvent;
 use regex::Regex;
 use winit::dpi::PhysicalSize;
 
 #[derive(Debug, Clone, PartialEq)]
-enum TabKind {
+pub enum TabKind {
     Empty,
     System,
     User(String),
 }
 
 #[derive(Debug, Clone)]
-pub struct Tab(usize, TabKind);
+pub struct Tab {
+    id: usize,
+    kind: TabKind,
+    lines: Vec<String>,
+}
+
+impl Tab {
+    pub fn new(id: usize, kind: TabKind) -> Self {
+        Self {
+            id,
+            kind,
+            lines: Vec::new(),
+        }
+    }
+}
 
 pub struct ChatScreen {
     input: ImString,
-    tabs: Vec<(Tab, Vec<String>)>,
+    tabs: Vec<Tab>,
     selected_tab: Option<usize>,
 }
 
@@ -26,46 +41,72 @@ impl ChatScreen {
     pub fn new() -> Self {
         Self {
             input: ImString::with_capacity(64),
-            tabs: vec![(Tab(0, TabKind::System), Vec::new())],
+            tabs: vec![Tab::new(0, TabKind::System)],
             selected_tab: Some(0),
         }
     }
 
-    fn new_tab(&mut self) {
-        self.tabs
-            .push((Tab(self.tabs.len(), TabKind::Empty), Vec::new()));
+    fn new_tab(&mut self, kind: TabKind) {
+        self.tabs.push(Tab {
+            id: self.tabs.len(),
+            kind,
+            lines: Vec::new(),
+        });
+    }
+
+    fn get_tab(&self, id: usize) -> Option<&Tab> {
+        self.tabs.iter().find(|tab| tab.id == id)
+    }
+
+    fn update_tab<L: Fn() -> String>(&mut self, kind: TabKind, line: L) -> bool {
+        for tab in self.tabs.iter_mut() {
+            match tab {
+                Tab { kind: tab_king, lines, .. } if *tab_king == kind => {
+                    lines.push(line());
+                    return true;
+                }
+                _ => {}
+            }
+        }
+        false
+    }
+
+    fn print_tab(&mut self, ui: &Ui, id: usize) -> bool {
+        for tab in &self.tabs {
+            match tab {
+                Tab { id: tab_id, kind, lines } if *tab_id == id => {
+                    if *kind == TabKind::System {
+                        print_lines(&ui, &lines, Some(RED));
+                    } else {
+                        print_lines(&ui, &lines, None);
+                    }
+                }
+                _ => {}
+            }
+        }
+        false
+    }
+
+    fn new_user_tab(&mut self, from: &UserProfile, content: &str) {
+        let id = self.tabs.len();
+        self.tabs.push(Tab {
+            id,
+            kind: TabKind::User(from.user_tag.clone()),
+            lines: vec![format!("[{}] {}", from.display_name, content)],
+        });
+        self.selected_tab = Some(id);
     }
 
     fn update(&mut self, events: &[LobbyEvent]) {
         for event in events {
             match event {
                 LobbyEvent::NewPrivateMessage { from, content } => {
-                    for (tab, lines) in self.tabs.iter_mut() {
-                        match tab {
-                            Tab(tab_id, TabKind::User(user_tag)) if user_tag == &from.user_tag => {
-                                lines.push(format!("[{}] {}", from.display_name, content));
-                                return;
-                            }
-                            _ => {}
-                        }
+                    if !self.update_tab(TabKind::User(from.user_tag.clone()), || content.clone()) {
+                        self.new_user_tab(from, content);
                     }
-                    let tab_id = self.tabs.len();
-                    self.tabs.push((
-                        Tab(tab_id, TabKind::User(from.user_tag.clone())),
-                        vec![format!("[{}] {}", from.display_name, content)],
-                    ));
-                    self.selected_tab = Some(tab_id);
                 }
                 LobbyEvent::SystemNotification { content } => {
-                    for (tab, lines) in self.tabs.iter_mut() {
-                        match tab {
-                            Tab(_, TabKind::System) => {
-                                lines.push(content.clone());
-                                return;
-                            }
-                            _ => {}
-                        }
-                    }
+                    self.update_tab(TabKind::System, || content.clone());
                 }
                 _ => {}
             }
@@ -80,7 +121,7 @@ lazy_static! {
 const RED: [f32; 4] = [1.0, 0.0, 0.0, 1.0];
 
 fn print_lines(ui: &Ui, lines: &[String], color: Option<[f32; 4]>) {
-    let style = color.map(|c| ui.push_style_color(StyleColor::Text, RED));
+    let style = color.map(|c| ui.push_style_color(StyleColor::Text, c));
     for line in lines {
         ui.text(line);
     }
@@ -103,39 +144,28 @@ impl Screen for ChatScreen {
             .position([5.0, size.height as f32 - 305.0], Condition::FirstUseEver)
             .build(&ui, || {
                 let [width, height] = ui.window_size();
-                for (tab, _) in &self.tabs {
-                    let Tab(tab_id, tab_kind) = tab;
-                    let tab_id_string = tab_id.to_string();
-                    let button_text = match tab_kind {
+                for tab in &self.tabs {
+                    let Tab { id, kind, .. } = tab;
+                    let tab_id_string = id.to_string();
+                    let button_text = match kind {
                         TabKind::Empty => tab_id_string.as_str(),
                         TabKind::System => "System",
                         TabKind::User(user_tag) => user_tag,
                     };
                     ui.same_line(0.0);
-                    let id = ui.push_id(*tab_id as i32);
+                    let id_token = ui.push_id(*id as i32);
                     if ui.button(&ImString::new(button_text), [0.0, 0.0]) {
-                        self.selected_tab = Some(*tab_id);
-                        println!("selected tab: {:?}", self.selected_tab);
+                        self.selected_tab = Some(*id);
                     }
-                    id.pop(&ui);
+                    id_token.pop(&ui);
                 }
                 ui.same_line(0.0);
                 if ui.button(im_str!("+"), [30.0, 0.0]) {
-                    self.new_tab();
+                    self.new_tab(TabKind::Empty);
                 }
 
                 if let Some(tab_id) = self.selected_tab {
-                    let (Tab(_, kind), lines) = self
-                        .tabs
-                        .iter()
-                        .find(|(Tab(id, _), _)| tab_id == *id)
-                        .unwrap();
-
-                    if *kind == TabKind::System {
-                        print_lines(&ui, &lines, Some(RED));
-                    } else {
-                        print_lines(&ui, &lines, None);
-                    }
+                    self.print_tab(&ui, tab_id);
                 }
 
                 ui.set_cursor_pos([8.0, height - 30.0]);
@@ -150,26 +180,21 @@ impl Screen for ChatScreen {
                         let user_tag = cap[1].to_owned();
                         let content = cap[2].to_owned();
                         action_sender.send(Action::SendPrivateMessage { user_tag, content });
-                        self.input.clear();
                     } else if let Some(tab_id) = self.selected_tab {
-                        let (Tab(_, kind), lines) = self
-                            .tabs
-                            .iter()
-                            .find(|(Tab(id, _), _)| tab_id == *id)
-                            .unwrap();
-
-                        match kind {
-                            TabKind::User(user_tag) => {
-                                let content = self.input.to_string();
-                                self.input.clear();
-                                action_sender.send(Action::SendPrivateMessage {
-                                    user_tag: user_tag.clone(),
-                                    content,
-                                });
+                        self.get_tab(tab_id).map(|tab| {
+                            match &tab.kind {
+                                TabKind::User(user_tag) => {
+                                    let content = self.input.to_string();
+                                    action_sender.send(Action::SendPrivateMessage {
+                                        user_tag: user_tag.clone(),
+                                        content,
+                                    });
+                                }
+                                _ => {}
                             }
-                            _ => {}
-                        };
+                        });
                     }
+                    self.input.clear();
                 }
             });
     }
