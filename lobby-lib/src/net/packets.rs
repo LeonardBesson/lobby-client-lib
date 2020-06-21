@@ -106,8 +106,9 @@ declare_packets! {
         content: String
     }
     NewPrivateMessage {
-        from: UserProfile
+        profile: UserProfile
         content: String
+        is_self: bool
     }
     SystemNotification {
         content: String

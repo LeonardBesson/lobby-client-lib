@@ -55,8 +55,9 @@ pub enum LobbyEvent {
         friend_list: Vec<Friend>,
     },
     NewPrivateMessage {
-        from: UserProfile,
+        profile: UserProfile,
         content: String,
+        is_self: bool,
     },
     SystemNotification {
         content: String,

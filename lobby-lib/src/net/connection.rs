@@ -241,8 +241,9 @@ impl Connection {
             PacketType::NewPrivateMessage => {
                 let msg = packet_to_message::<NewPrivateMessage>(&packet).unwrap();
                 self.events.push(LobbyEvent::NewPrivateMessage {
-                    from: msg.from,
+                    profile: msg.profile,
                     content: msg.content,
+                    is_self: msg.is_self,
                 });
             }
             PacketType::SystemNotification => {

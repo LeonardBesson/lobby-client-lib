@@ -168,13 +168,15 @@ impl Application {
         }
         for event in &self.lobby.events {
             match event {
-                LobbyEvent::AuthSuccess { .. } => {
+                LobbyEvent::AuthSuccess { user_profile, .. } => {
                     self.ui
                         .replace_screen("LoginScreen", "HomeScreen", Box::new(HomeScreen));
                     self.ui
                         .push_screen("Friends", Box::new(FriendListScreen::new()));
-                    self.ui
-                        .push_screen("ChatScreen", Box::new(ChatScreen::new()));
+                    self.ui.push_screen(
+                        "ChatScreen",
+                        Box::new(ChatScreen::new(user_profile.clone())),
+                    );
 
                     self.lobby.client.refresh_friend_requests();
                     self.lobby.client.refresh_friend_list();

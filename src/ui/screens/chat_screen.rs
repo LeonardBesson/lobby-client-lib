@@ -32,14 +32,16 @@ impl Tab {
 }
 
 pub struct ChatScreen {
+    user_profile: UserProfile,
     input: ImString,
     tabs: Vec<Tab>,
     selected_tab: Option<usize>,
 }
 
 impl ChatScreen {
-    pub fn new() -> Self {
+    pub fn new(user_profile: UserProfile) -> Self {
         Self {
+            user_profile,
             input: ImString::with_capacity(64),
             tabs: vec![Tab::new(0, TabKind::System)],
             selected_tab: Some(0),
@@ -61,7 +63,11 @@ impl ChatScreen {
     fn update_tab<L: Fn() -> String>(&mut self, kind: TabKind, line: L) -> bool {
         for tab in self.tabs.iter_mut() {
             match tab {
-                Tab { kind: tab_king, lines, .. } if *tab_king == kind => {
+                Tab {
+                    kind: tab_king,
+                    lines,
+                    ..
+                } if *tab_king == kind => {
                     lines.push(line());
                     return true;
                 }
@@ -74,7 +80,11 @@ impl ChatScreen {
     fn print_tab(&mut self, ui: &Ui, id: usize) -> bool {
         for tab in &self.tabs {
             match tab {
-                Tab { id: tab_id, kind, lines } if *tab_id == id => {
+                Tab {
+                    id: tab_id,
+                    kind,
+                    lines,
+                } if *tab_id == id => {
                     if *kind == TabKind::System {
                         print_lines(&ui, &lines, Some(RED));
                     } else {
@@ -87,12 +97,17 @@ impl ChatScreen {
         false
     }
 
-    fn new_user_tab(&mut self, from: &UserProfile, content: &str) {
+    fn new_user_tab(&mut self, profile: &UserProfile, content: &str, is_self: bool) {
         let id = self.tabs.len();
+        let content = if is_self {
+            format!("To [{}]: {}", profile.display_name, content)
+        } else {
+            format!("From [{}]: {}", profile.display_name, content)
+        };
         self.tabs.push(Tab {
             id,
-            kind: TabKind::User(from.user_tag.clone()),
-            lines: vec![format!("[{}] {}", from.display_name, content)],
+            kind: TabKind::User(profile.user_tag.clone()),
+            lines: vec![content],
         });
         self.selected_tab = Some(id);
     }
@@ -100,9 +115,19 @@ impl ChatScreen {
     fn update(&mut self, events: &[LobbyEvent]) {
         for event in events {
             match event {
-                LobbyEvent::NewPrivateMessage { from, content } => {
-                    if !self.update_tab(TabKind::User(from.user_tag.clone()), || content.clone()) {
-                        self.new_user_tab(from, content);
+                LobbyEvent::NewPrivateMessage {
+                    profile,
+                    content,
+                    is_self,
+                } => {
+                    if !self.update_tab(TabKind::User(profile.user_tag.clone()), || {
+                        if *is_self {
+                            format!("To [{}]: {}", profile.display_name, content)
+                        } else {
+                            format!("From [{}]: {}", profile.display_name, content)
+                        }
+                    }) {
+                        self.new_user_tab(profile, content, *is_self);
                     }
                 }
                 LobbyEvent::SystemNotification { content } => {
@@ -181,17 +206,15 @@ impl Screen for ChatScreen {
                         let content = cap[2].to_owned();
                         action_sender.send(Action::SendPrivateMessage { user_tag, content });
                     } else if let Some(tab_id) = self.selected_tab {
-                        self.get_tab(tab_id).map(|tab| {
-                            match &tab.kind {
-                                TabKind::User(user_tag) => {
-                                    let content = self.input.to_string();
-                                    action_sender.send(Action::SendPrivateMessage {
-                                        user_tag: user_tag.clone(),
-                                        content,
-                                    });
-                                }
-                                _ => {}
+                        self.get_tab(tab_id).map(|tab| match &tab.kind {
+                            TabKind::User(user_tag) => {
+                                let content = self.input.to_string();
+                                action_sender.send(Action::SendPrivateMessage {
+                                    user_tag: user_tag.clone(),
+                                    content,
+                                });
                             }
+                            _ => {}
                         });
                     }
                     self.input.clear();
