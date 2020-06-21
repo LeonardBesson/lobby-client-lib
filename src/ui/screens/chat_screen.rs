@@ -43,7 +43,7 @@ impl ChatScreen {
                     for (tab, lines) in self.tabs.iter_mut() {
                         match tab {
                             Tab(tab_id, TabKind::User(user_tag)) if user_tag == &from.user_tag => {
-                                lines.push(content.clone());
+                                lines.push(format!("[{}] {}", from.display_name, content));
                                 return;
                             }
                             _ => {}
@@ -52,7 +52,7 @@ impl ChatScreen {
                     let tab_id = self.tabs.len();
                     self.tabs.push((
                         Tab(tab_id, TabKind::User(from.user_tag.clone())),
-                        vec![content.clone()],
+                        vec![format!("[{}] {}", from.display_name, content)],
                     ));
                     self.selected_tab = Some(tab_id);
                 }
@@ -151,6 +151,24 @@ impl Screen for ChatScreen {
                         let content = cap[2].to_owned();
                         action_sender.send(Action::SendPrivateMessage { user_tag, content });
                         self.input.clear();
+                    } else if let Some(tab_id) = self.selected_tab {
+                        let (Tab(_, kind), lines) = self
+                            .tabs
+                            .iter()
+                            .find(|(Tab(id, _), _)| tab_id == *id)
+                            .unwrap();
+
+                        match kind {
+                            TabKind::User(user_tag) => {
+                                let content = self.input.to_string();
+                                self.input.clear();
+                                action_sender.send(Action::SendPrivateMessage {
+                                    user_tag: user_tag.clone(),
+                                    content,
+                                });
+                            }
+                            _ => {}
+                        };
                     }
                 }
             });
