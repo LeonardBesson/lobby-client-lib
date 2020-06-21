@@ -6,7 +6,7 @@ use lobby_lib::LobbyEvent;
 use regex::Regex;
 use winit::dpi::PhysicalSize;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 enum TabKind {
     Empty,
     System,
@@ -77,6 +77,16 @@ lazy_static! {
     static ref MESSAGE_REGEX: Regex = Regex::new(r"/w (\S+) (\w+)").unwrap();
 }
 
+const RED: [f32; 4] = [1.0, 0.0, 0.0, 1.0];
+
+fn print_lines(ui: &Ui, lines: &[String], color: Option<[f32; 4]>) {
+    let style = color.map(|c| ui.push_style_color(StyleColor::Text, RED));
+    for line in lines {
+        ui.text(line);
+    }
+    style.map(|s| s.pop(&ui));
+}
+
 impl Screen for ChatScreen {
     fn draw(
         &mut self,
@@ -115,13 +125,16 @@ impl Screen for ChatScreen {
                 }
 
                 if let Some(tab_id) = self.selected_tab {
-                    let (_, lines) = self
+                    let (Tab(_, kind), lines) = self
                         .tabs
                         .iter()
                         .find(|(Tab(id, _), _)| tab_id == *id)
                         .unwrap();
-                    for line in lines {
-                        ui.text(line);
+
+                    if *kind == TabKind::System {
+                        print_lines(&ui, &lines, Some(RED));
+                    } else {
+                        print_lines(&ui, &lines, None);
                     }
                 }
 
