@@ -744,7 +744,9 @@ dependencies = [
  "imgui",
  "imgui-wgpu",
  "imgui-winit-support",
+ "lazy_static",
  "lobby-lib",
+ "regex",
  "wgpu",
  "winit",
 ]

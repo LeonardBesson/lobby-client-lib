@@ -238,6 +238,19 @@ impl Connection {
                     friend_list: msg.friend_list,
                 });
             }
+            PacketType::NewPrivateMessage => {
+                let msg = packet_to_message::<NewPrivateMessage>(&packet).unwrap();
+                self.events.push(LobbyEvent::NewPrivateMessage {
+                    from: msg.from,
+                    content: msg.content,
+                });
+            }
+            PacketType::SystemNotification => {
+                let msg = packet_to_message::<SystemNotification>(&packet).unwrap();
+                self.events.push(LobbyEvent::SystemNotification {
+                    content: msg.content,
+                });
+            }
             _ => {
                 error!("Received unhandled packet type: {:?}", packet.packet_type);
             }

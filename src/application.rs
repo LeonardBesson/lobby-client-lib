@@ -1,5 +1,6 @@
 use crate::renderer::Renderer;
 use crate::time::{FrameLimit, FrameLimitStrategy, Time};
+use crate::ui::screens::chat_screen::ChatScreen;
 use crate::ui::screens::events_screen::EventScreen;
 use crate::ui::screens::friend_list_screen::FriendListScreen;
 use crate::ui::screens::home_screen::HomeScreen;
@@ -41,6 +42,10 @@ pub enum Action {
     },
     RemoveFriend {
         user_tag: String,
+    },
+    SendPrivateMessage {
+        user_tag: String,
+        content: String,
     },
 }
 
@@ -156,6 +161,9 @@ impl Application {
                 Action::RemoveFriend { user_tag } => {
                     self.lobby.client.remove_friend(user_tag);
                 }
+                Action::SendPrivateMessage { user_tag, content } => {
+                    self.lobby.client.send_private_message(user_tag, content);
+                }
             }
         }
         for event in &self.lobby.events {
@@ -165,6 +173,8 @@ impl Application {
                         .replace_screen("LoginScreen", "HomeScreen", Box::new(HomeScreen));
                     self.ui
                         .push_screen("Friends", Box::new(FriendListScreen::new()));
+                    self.ui
+                        .push_screen("ChatScreen", Box::new(ChatScreen::new()));
 
                     self.lobby.client.refresh_friend_requests();
                     self.lobby.client.refresh_friend_list();

@@ -54,6 +54,13 @@ pub enum LobbyEvent {
     FriendListUpdated {
         friend_list: Vec<Friend>,
     },
+    NewPrivateMessage {
+        from: UserProfile,
+        content: String,
+    },
+    SystemNotification {
+        content: String,
+    },
     // TODO: error events
 }
 
@@ -165,6 +172,10 @@ impl LobbyClient {
 
     pub fn remove_friend(&mut self, user_tag: String) {
         self.send_to_lobby(RemoveFriend { user_tag });
+    }
+
+    pub fn send_private_message(&mut self, user_tag: String, content: String) {
+        self.send_to_lobby(SendPrivateMessage { user_tag, content });
     }
 
     fn handle_event(&mut self, event: &LobbyEvent) {

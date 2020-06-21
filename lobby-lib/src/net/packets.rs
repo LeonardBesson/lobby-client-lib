@@ -101,6 +101,17 @@ declare_packets! {
     RemoveFriendResponse {
         error_code: Option<String>
     }
+    SendPrivateMessage {
+        user_tag: String
+        content: String
+    }
+    NewPrivateMessage {
+        from: UserProfile
+        content: String
+    }
+    SystemNotification {
+        content: String
+    }
 }
 
 lazy_static! {
@@ -130,6 +141,9 @@ pub enum PacketType {
     FetchFriendListResponse = 13,
     RemoveFriend = 14,
     RemoveFriendResponse = 15,
+    SendPrivateMessage = 16,
+    NewPrivateMessage = 17,
+    SystemNotification = 18,
 
     Last,
 }
@@ -151,6 +165,9 @@ fn init_packets(types: &mut [Option<PacketInfo>; packet_count()]) {
     FetchFriendListResponse::register(types);
     RemoveFriend::register(types);
     RemoveFriendResponse::register(types);
+    SendPrivateMessage::register(types);
+    NewPrivateMessage::register(types);
+    SystemNotification::register(types);
 }
 
 pub fn init() {
@@ -169,5 +186,6 @@ pub fn has(packet_type: PacketType) -> bool {
 }
 
 pub fn get(packet_type: PacketType) -> PacketInfo {
-    PACKET_INFOS[packet_type as usize].expect("Packet type {:?} is not registered!")
+    PACKET_INFOS[packet_type as usize]
+        .expect(&format!("Packet type {:?} is not registered!", packet_type))
 }

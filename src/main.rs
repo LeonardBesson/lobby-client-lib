@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate lazy_static;
+
 use crate::application::Application;
 use futures::executor::block_on;
 use lobby_lib;
