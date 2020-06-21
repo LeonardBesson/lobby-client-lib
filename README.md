@@ -10,4 +10,6 @@ Client library for [Lobby](https://github.com/LeonardBesson/lobby-server)
 
 `lobby-lib` contains the client lib. 
 
-`src` contains a debug GUI client implementing the library. It serves as a visual aid, as well as an example implementation. It uses ImGUI with [wgpu](https://github.com/gfx-rs/wgpu-rs) as backend.
+`src` contains a debug GUI client implementing the library. It serves as a visual aid, as well as an example implementation. It uses ImGUI with [wgpu](https://github.com/gfx-rs/wgpu-rs) as backend and looks like this:
+
+![debug-gui](screenshots/debug-gui.png?raw=true "Debug GUI")
