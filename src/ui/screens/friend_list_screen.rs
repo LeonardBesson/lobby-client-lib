@@ -71,6 +71,7 @@ impl Screen for FriendListScreen {
                     action_sender.send(Action::AddFriend {
                         user_tag: self.user_tag_input.to_string(),
                     });
+                    self.user_tag_input.clear();
                 }
                 input_group.end(&ui);
                 ui.separator();

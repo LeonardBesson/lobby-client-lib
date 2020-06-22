@@ -1,7 +1,7 @@
 use crate::application::Action;
 use crate::ui::screens::Screen;
 use crossbeam_channel::Sender;
-use imgui::{im_str, Condition, ImString, StyleColor, Ui};
+use imgui::{im_str, Condition, FocusedWidget, ImString, StyleColor, Ui};
 use lobby_lib::net::structs::UserProfile;
 use lobby_lib::LobbyEvent;
 use regex::Regex;
@@ -64,10 +64,10 @@ impl ChatScreen {
         for tab in self.tabs.iter_mut() {
             match tab {
                 Tab {
-                    kind: tab_king,
+                    kind: tab_kind,
                     lines,
                     ..
-                } if *tab_king == kind => {
+                } if *tab_kind == kind => {
                     lines.push(line());
                     return true;
                 }
@@ -218,6 +218,7 @@ impl Screen for ChatScreen {
                         });
                     }
                     self.input.clear();
+                    ui.set_keyboard_focus_here(FocusedWidget::Previous);
                 }
             });
     }
