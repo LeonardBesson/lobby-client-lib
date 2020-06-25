@@ -5,6 +5,7 @@ use crate::net::packets::{PacketInit, PacketType};
 use crate::net::transport::tcp_socket::TcpSocket;
 use crate::utils::byte_buffer::ByteBuffer;
 use crate::LobbyEvent;
+use bincode::config::Options;
 use bytes::Bytes;
 use mio::net::TcpStream;
 use mio::{Interest, Registry, Token};
@@ -42,10 +43,10 @@ pub trait Message<'de>: Serialize + Deserialize<'de> {
     fn packet_type(&self) -> PacketType;
     fn packet_info(&self) -> PacketInfo;
     fn serialize_data(&self) -> bincode::Result<Vec<u8>> {
-        bincode::serialize(&self)
+        bincode::config::DefaultOptions::new().serialize(&self)
     }
     fn deserialize(buffer: &'de [u8]) -> bincode::Result<Self> {
-        bincode::deserialize(&buffer[..])
+        bincode::config::DefaultOptions::new().deserialize(&buffer[..])
     }
 }
 
