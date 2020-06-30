@@ -1,7 +1,7 @@
 use crate::application::Action;
 use crate::ui::screens::Screen;
 use crossbeam_channel::Sender;
-use imgui::{im_str, Condition, ImString, StyleVar, Ui};
+use imgui::{im_str, Condition, ImString, MouseButton, StyleVar, Ui};
 
 use lobby_lib::net::packets::PacketType::FriendRequestAction;
 use lobby_lib::net::structs::{Friend, FriendRequest, FriendRequestActionChoice, UserProfile};
@@ -43,6 +43,9 @@ impl FriendListScreen {
         }
     }
 }
+
+const ONLINE_FRIEND_COLOR: [f32; 4] = [0.0, 1.0, 0.0, 1.0];
+const OFFLINE_FRIEND_COLOR: [f32; 4] = [1.0, 0.0, 0.0, 1.0];
 
 impl Screen for FriendListScreen {
     fn draw(
@@ -146,17 +149,33 @@ impl Screen for FriendListScreen {
                 ui.separator();
                 for friend in online_friends {
                     ui.indent();
-                    ui.text(format!(
-                        "{} ({})",
-                        &friend.user_profile.display_name, &friend.user_profile.user_tag
-                    ));
-                    ui.same_line(0.0);
-                    if ui.button(im_str!("Remove"), [0.0, 0.0]) {
-                        action_sender.send(Action::RemoveFriend {
-                            user_tag: friend.user_profile.user_tag.clone(),
-                        });
-                    }
+                    ui.text_colored(
+                        ONLINE_FRIEND_COLOR,
+                        format!(
+                            "{} ({})",
+                            &friend.user_profile.display_name, &friend.user_profile.user_tag
+                        ),
+                    );
                     ui.unindent();
+                    if ui.is_mouse_clicked(MouseButton::Right)
+                        && ui.is_mouse_hovering_rect(ui.item_rect_min(), ui.item_rect_max())
+                    {
+                        ui.open_popup(im_str!("friend_menu"));
+                    }
+                    ui.popup(im_str!("friend_menu"), || {
+                        if ui.button(im_str!("Invite"), [0.0, 0.0]) {
+                            action_sender.send(Action::InviteUser {
+                                user_tag: friend.user_profile.user_tag.clone(),
+                            });
+                            ui.close_current_popup();
+                        }
+                        if ui.button(im_str!("Remove"), [0.0, 0.0]) {
+                            action_sender.send(Action::RemoveFriend {
+                                user_tag: friend.user_profile.user_tag.clone(),
+                            });
+                            ui.close_current_popup();
+                        }
+                    });
                     ui.separator();
                 }
                 online_friends_group.end(&ui);
@@ -166,17 +185,27 @@ impl Screen for FriendListScreen {
                 ui.separator();
                 for friend in offline_friends {
                     ui.indent();
-                    ui.text(format!(
-                        "{} ({})",
-                        &friend.user_profile.display_name, &friend.user_profile.user_tag
-                    ));
-                    ui.same_line(0.0);
-                    if ui.button(im_str!("Remove"), [0.0, 0.0]) {
-                        action_sender.send(Action::RemoveFriend {
-                            user_tag: friend.user_profile.user_tag.clone(),
-                        });
-                    }
+                    ui.text_colored(
+                        OFFLINE_FRIEND_COLOR,
+                        format!(
+                            "{} ({})",
+                            &friend.user_profile.display_name, &friend.user_profile.user_tag
+                        ),
+                    );
                     ui.unindent();
+                    if ui.is_mouse_clicked(MouseButton::Right)
+                        && ui.is_mouse_hovering_rect(ui.item_rect_min(), ui.item_rect_max())
+                    {
+                        ui.open_popup(im_str!("friend_menu"));
+                    }
+                    ui.popup(im_str!("friend_menu"), || {
+                        if ui.button(im_str!("Remove"), [0.0, 0.0]) {
+                            action_sender.send(Action::RemoveFriend {
+                                user_tag: friend.user_profile.user_tag.clone(),
+                            });
+                            ui.close_current_popup();
+                        }
+                    });
                     ui.separator();
                 }
                 offline_friends_group.end(&ui);

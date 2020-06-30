@@ -47,6 +47,9 @@ pub enum Action {
         user_tag: String,
         content: String,
     },
+    InviteUser {
+        user_tag: String,
+    },
 }
 
 // Wrapper struct to reduce boiler plate
@@ -163,6 +166,9 @@ impl Application {
                 }
                 Action::SendPrivateMessage { user_tag, content } => {
                     self.lobby.client.send_private_message(user_tag, content);
+                }
+                Action::InviteUser { user_tag } => {
+                    self.lobby.client.invite_user(user_tag);
                 }
             }
         }

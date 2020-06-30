@@ -20,6 +20,7 @@ pub mod utils;
 
 #[derive(Debug, Copy, Clone)]
 pub enum ErrorCode {
+    InternalError,
     InvalidCredentials,
 }
 
@@ -28,6 +29,7 @@ impl FromStr for ErrorCode {
 
     fn from_str(input: &str) -> Result<Self> {
         match input {
+            "internal_error" => Ok(ErrorCode::InternalError),
             "invalid_credentials" => Ok(ErrorCode::InvalidCredentials),
             _ => Err(ErrorKind::InvalidArg(format!("Unknown error code: {}", input)).into()),
         }
@@ -177,6 +179,10 @@ impl LobbyClient {
 
     pub fn send_private_message(&mut self, user_tag: String, content: String) {
         self.send_to_lobby(SendPrivateMessage { user_tag, content });
+    }
+
+    pub fn invite_user(&mut self, user_tag: String) {
+        self.send_to_lobby(InviteUser { user_tag })
     }
 
     fn handle_event(&mut self, event: &LobbyEvent) {

@@ -113,6 +113,12 @@ declare_packets! {
     SystemNotification {
         content: String
     }
+    InviteUser {
+        user_tag: String
+    }
+    LobbyInvite {
+        inviter: UserProfile
+    }
 }
 
 lazy_static! {
@@ -145,6 +151,8 @@ pub enum PacketType {
     SendPrivateMessage = 16,
     NewPrivateMessage = 17,
     SystemNotification = 18,
+    InviteUser = 19,
+    LobbyInvite = 20,
 
     Last,
 }
@@ -169,6 +177,8 @@ fn init_packets(types: &mut [Option<PacketInfo>; packet_count()]) {
     SendPrivateMessage::register(types);
     NewPrivateMessage::register(types);
     SystemNotification::register(types);
+    InviteUser::register(types);
+    LobbyInvite::register(types);
 }
 
 pub fn init() {
