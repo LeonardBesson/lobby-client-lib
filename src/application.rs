@@ -4,13 +4,14 @@ use crate::ui::screens::chat_screen::ChatScreen;
 use crate::ui::screens::events_screen::EventScreen;
 use crate::ui::screens::friend_list_screen::FriendListScreen;
 use crate::ui::screens::home_screen::HomeScreen;
+use crate::ui::screens::lobby_screen::LobbyScreen;
 use crate::ui::screens::login_screen::LoginScreen;
 use crate::ui::screens::root_screen::RootScreen;
 use crate::ui::Ui;
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use lobby_lib::net::packets;
 use lobby_lib::net::packets::*;
-use lobby_lib::net::structs::FriendRequestActionChoice;
+use lobby_lib::net::structs::{FriendRequestActionChoice, LobbyInviteActionChoice};
 use lobby_lib::{net, LobbyClient, LobbyClientBuilder, LobbyEvent};
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
@@ -49,6 +50,10 @@ pub enum Action {
     },
     InviteUser {
         user_tag: String,
+    },
+    LobbyInviteAction {
+        invite_id: String,
+        action: LobbyInviteActionChoice,
     },
 }
 
@@ -170,6 +175,9 @@ impl Application {
                 Action::InviteUser { user_tag } => {
                     self.lobby.client.invite_user(user_tag);
                 }
+                Action::LobbyInviteAction { invite_id, action } => {
+                    self.lobby.client.lobby_invite_action(invite_id, action);
+                }
             }
         }
         for event in &self.lobby.events {
@@ -186,6 +194,8 @@ impl Application {
                         "ChatScreen",
                         Box::new(ChatScreen::new(user_profile.clone())),
                     );
+                    self.ui
+                        .push_screen("LobbyScreen", Box::new(LobbyScreen::new()));
 
                     self.lobby.client.refresh_friend_requests();
                     self.lobby.client.refresh_friend_list();

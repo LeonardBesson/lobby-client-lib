@@ -6,6 +6,7 @@ pub mod chat_screen;
 pub mod events_screen;
 pub mod friend_list_screen;
 pub mod home_screen;
+pub mod lobby_screen;
 pub mod login_screen;
 pub mod root_screen;
 

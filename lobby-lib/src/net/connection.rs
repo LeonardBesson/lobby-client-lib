@@ -252,6 +252,13 @@ impl Connection {
                     content: msg.content,
                 });
             }
+            PacketType::LobbyInvite => {
+                let msg = packet_to_message::<LobbyInvite>(&packet).unwrap();
+                self.events.push(LobbyEvent::LobbyInvite {
+                    id: msg.id,
+                    inviter: msg.inviter,
+                });
+            }
             _ => {
                 error!("Received unhandled packet type: {:?}", packet.packet_type);
             }

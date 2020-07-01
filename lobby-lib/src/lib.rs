@@ -4,7 +4,9 @@ use crate::net::connection::{ConnState, Connection};
 use crate::net::connection_manager::ConnectionManager;
 use crate::net::packet::{message_to_packet, Packet};
 use crate::net::packets::*;
-use crate::net::structs::{Friend, FriendRequest, FriendRequestActionChoice, UserProfile};
+use crate::net::structs::{
+    Friend, FriendRequest, FriendRequestActionChoice, LobbyInviteActionChoice, UserProfile,
+};
 use crate::net::Message;
 use log::{debug, error};
 use std::collections::VecDeque;
@@ -64,7 +66,10 @@ pub enum LobbyEvent {
     SystemNotification {
         content: String,
     },
-    // TODO: error events
+    LobbyInvite {
+        id: String,
+        inviter: UserProfile,
+    }, // TODO: error events
 }
 
 pub type Result<T> = ::std::result::Result<T, Error>;
@@ -183,6 +188,10 @@ impl LobbyClient {
 
     pub fn invite_user(&mut self, user_tag: String) {
         self.send_to_lobby(InviteUser { user_tag })
+    }
+
+    pub fn lobby_invite_action(&mut self, invite_id: String, action: LobbyInviteActionChoice) {
+        self.send_to_lobby(LobbyInviteAction { invite_id, action });
     }
 
     fn handle_event(&mut self, event: &LobbyEvent) {
