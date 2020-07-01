@@ -117,7 +117,12 @@ declare_packets! {
         user_tag: String
     }
     LobbyInvite {
+        id: String
         inviter: UserProfile
+    }
+    LobbyInviteAction {
+        invite_id: String
+        action: LobbyInviteActionChoice
     }
 }
 
@@ -153,6 +158,7 @@ pub enum PacketType {
     SystemNotification = 18,
     InviteUser = 19,
     LobbyInvite = 20,
+    LobbyInviteAction = 21,
 
     Last,
 }
@@ -179,6 +185,7 @@ fn init_packets(types: &mut [Option<PacketInfo>; packet_count()]) {
     SystemNotification::register(types);
     InviteUser::register(types);
     LobbyInvite::register(types);
+    LobbyInviteAction::register(types);
 }
 
 pub fn init() {

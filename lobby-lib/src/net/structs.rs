@@ -25,3 +25,9 @@ pub struct Friend {
     pub user_profile: UserProfile,
     pub is_online: bool,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum LobbyInviteActionChoice {
+    Accept,
+    Decline,
+}

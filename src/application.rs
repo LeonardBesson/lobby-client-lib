@@ -175,8 +175,11 @@ impl Application {
         for event in &self.lobby.events {
             match event {
                 LobbyEvent::AuthSuccess { user_profile, .. } => {
-                    self.ui
-                        .replace_screen("LoginScreen", "HomeScreen", Box::new(HomeScreen));
+                    self.ui.replace_screen(
+                        "LoginScreen",
+                        "HomeScreen",
+                        Box::new(HomeScreen::new()),
+                    );
                     self.ui
                         .push_screen("Friends", Box::new(FriendListScreen::new()));
                     self.ui.push_screen(
