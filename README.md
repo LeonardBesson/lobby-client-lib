@@ -2,9 +2,9 @@ Client library for [Lobby](https://github.com/LeonardBesson/lobby-server)
 
 ## Features
 
-* It integrates easily into any engine by hooking into your game loop.
+* Integrates easily into any engine by hooking into your game loop.
 * Aims to keep the overhead as minimal as possible. Lightweight, non-blocking networking built on top of [Mio](https://github.com/tokio-rs/mio).
-* Unopinionated treading. It doesn't matter whether your game is single threaded or you use a complex parallel ECS like [Legion](https://github.com/TomGillen/legion) or [Specs](https://github.com/amethyst/specs)
+* Unopinionated threading. It doesn't matter whether your game is single threaded or you use a complex parallel ECS like [Legion](https://github.com/TomGillen/legion) or [Specs](https://github.com/amethyst/specs)
 
 ## Content
 
