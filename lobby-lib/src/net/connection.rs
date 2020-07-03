@@ -259,6 +259,25 @@ impl Connection {
                     inviter: msg.inviter,
                 });
             }
+            PacketType::LobbyJoined => {
+                let msg = packet_to_message::<LobbyJoined>(&packet).unwrap();
+                self.events.push(LobbyEvent::LobbyJoined {
+                    lobby_id: msg.lobby_id,
+                });
+            }
+            PacketType::LobbyMemberUpdate => {
+                let msg = packet_to_message::<LobbyMemberUpdate>(&packet).unwrap();
+                self.events.push(LobbyEvent::LobbyMemberUpdate {
+                    lobby_id: msg.lobby_id,
+                    members: msg.members,
+                });
+            }
+            PacketType::LobbyLeft => {
+                let msg = packet_to_message::<LobbyLeft>(&packet).unwrap();
+                self.events.push(LobbyEvent::LobbyLeft {
+                    lobby_id: msg.lobby_id,
+                });
+            }
             _ => {
                 error!("Received unhandled packet type: {:?}", packet.packet_type);
             }

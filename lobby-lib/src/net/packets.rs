@@ -124,6 +124,21 @@ declare_packets! {
         invite_id: String
         action: LobbyInviteActionChoice
     }
+    LobbyJoined {
+        lobby_id: String
+    }
+    LobbyMemberUpdate {
+        lobby_id: String
+        members: Vec<LobbyMember>
+    }
+    LobbyLeft {
+        lobby_id: String
+    }
+    NewLobbyMessage {
+        lobby_id: String
+        profile: Option<UserProfile>
+        content: String
+    }
 }
 
 lazy_static! {
@@ -159,6 +174,10 @@ pub enum PacketType {
     InviteUser = 19,
     LobbyInvite = 20,
     LobbyInviteAction = 21,
+    LobbyJoined = 22,
+    LobbyMemberUpdate = 23,
+    LobbyLeft = 24,
+    NewLobbyMessage = 25,
 
     Last,
 }
@@ -186,6 +205,10 @@ fn init_packets(types: &mut [Option<PacketInfo>; packet_count()]) {
     InviteUser::register(types);
     LobbyInvite::register(types);
     LobbyInviteAction::register(types);
+    LobbyJoined::register(types);
+    LobbyMemberUpdate::register(types);
+    LobbyLeft::register(types);
+    NewLobbyMessage::register(types);
 }
 
 pub fn init() {

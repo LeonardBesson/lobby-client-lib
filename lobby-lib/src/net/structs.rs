@@ -31,3 +31,16 @@ pub enum LobbyInviteActionChoice {
     Accept,
     Decline,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum LobbyRole {
+    Leader,
+    Member,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LobbyMember {
+    pub user_profile: UserProfile,
+    pub role: LobbyRole,
+    pub is_online: bool,
+}

@@ -5,7 +5,8 @@ use crate::net::connection_manager::ConnectionManager;
 use crate::net::packet::{message_to_packet, Packet};
 use crate::net::packets::*;
 use crate::net::structs::{
-    Friend, FriendRequest, FriendRequestActionChoice, LobbyInviteActionChoice, UserProfile,
+    Friend, FriendRequest, FriendRequestActionChoice, LobbyInviteActionChoice, LobbyMember,
+    UserProfile,
 };
 use crate::net::Message;
 use log::{debug, error};
@@ -69,6 +70,16 @@ pub enum LobbyEvent {
     LobbyInvite {
         id: String,
         inviter: UserProfile,
+    },
+    LobbyJoined {
+        lobby_id: String,
+    },
+    LobbyMemberUpdate {
+        lobby_id: String,
+        members: Vec<LobbyMember>,
+    },
+    LobbyLeft {
+        lobby_id: String,
     }, // TODO: error events
 }
 
