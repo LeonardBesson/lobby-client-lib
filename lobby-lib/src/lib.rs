@@ -80,6 +80,11 @@ pub enum LobbyEvent {
     },
     LobbyLeft {
         lobby_id: String,
+    },
+    NewLobbyMessage {
+        lobby_id: String,
+        profile: Option<UserProfile>,
+        content: String,
     }, // TODO: error events
 }
 
@@ -203,6 +208,10 @@ impl LobbyClient {
 
     pub fn lobby_invite_action(&mut self, invite_id: String, action: LobbyInviteActionChoice) {
         self.send_to_lobby(LobbyInviteAction { invite_id, action });
+    }
+
+    pub fn send_lobby_message(&mut self, content: String) {
+        self.send_to_lobby(SendLobbyMessage { content })
     }
 
     fn handle_event(&mut self, event: &LobbyEvent) {

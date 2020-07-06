@@ -134,6 +134,9 @@ declare_packets! {
     LobbyLeft {
         lobby_id: String
     }
+    SendLobbyMessage {
+        content: String
+    }
     NewLobbyMessage {
         lobby_id: String
         profile: Option<UserProfile>
@@ -177,7 +180,8 @@ pub enum PacketType {
     LobbyJoined = 22,
     LobbyMemberUpdate = 23,
     LobbyLeft = 24,
-    NewLobbyMessage = 25,
+    SendLobbyMessage = 25,
+    NewLobbyMessage = 26,
 
     Last,
 }
@@ -208,6 +212,7 @@ fn init_packets(types: &mut [Option<PacketInfo>; packet_count()]) {
     LobbyJoined::register(types);
     LobbyMemberUpdate::register(types);
     LobbyLeft::register(types);
+    SendLobbyMessage::register(types);
     NewLobbyMessage::register(types);
 }
 

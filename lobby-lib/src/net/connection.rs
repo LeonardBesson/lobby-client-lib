@@ -278,6 +278,14 @@ impl Connection {
                     lobby_id: msg.lobby_id,
                 });
             }
+            PacketType::NewLobbyMessage => {
+                let msg = packet_to_message::<NewLobbyMessage>(&packet).unwrap();
+                self.events.push(LobbyEvent::NewLobbyMessage {
+                    lobby_id: msg.lobby_id,
+                    profile: msg.profile,
+                    content: msg.content,
+                });
+            }
             _ => {
                 error!("Received unhandled packet type: {:?}", packet.packet_type);
             }

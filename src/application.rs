@@ -55,6 +55,9 @@ pub enum Action {
         invite_id: String,
         action: LobbyInviteActionChoice,
     },
+    SendLobbyMessage {
+        content: String,
+    },
 }
 
 // Wrapper struct to reduce boiler plate
@@ -177,6 +180,9 @@ impl Application {
                 }
                 Action::LobbyInviteAction { invite_id, action } => {
                     self.lobby.client.lobby_invite_action(invite_id, action);
+                }
+                Action::SendLobbyMessage { content } => {
+                    self.lobby.client.send_lobby_message(content);
                 }
             }
         }
